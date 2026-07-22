@@ -67,7 +67,7 @@ app.post('/api/v1/analyze', (req, res) => {
 app.listen(PORT, () => {
   console.log('');
   console.log('  ╔══════════════════════════════════════════════╗');
-  console.log('  ║  🏃 StepCounter AI Analytics Server         ║');
+  console.log('  ║  🏃 VibeWalk AI Analytics Server            ║');
   console.log(`  ║  🌐 Running on http://localhost:${PORT}        ║`);
   console.log('  ║  📊 POST /api/v1/analyze                    ║');
   console.log('  ║  💚 GET  /health                            ║');

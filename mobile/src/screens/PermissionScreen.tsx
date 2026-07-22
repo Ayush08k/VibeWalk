@@ -41,7 +41,7 @@ export default function PermissionScreen({ onPermissionGranted }: PermissionScre
         <Text style={styles.emoji}>👟</Text>
         <Text style={styles.title}>Track Your Steps</Text>
         <Text style={styles.subtitle}>
-          StepCounter needs access to your health data to display your daily steps and activity trends.
+          VibeWalk needs access to your health data to display your daily steps and activity trends.
         </Text>
         
         <View style={styles.bulletContainer}>

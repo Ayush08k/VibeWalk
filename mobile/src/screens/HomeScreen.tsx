@@ -41,7 +41,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00E676" />}
       >
-        <Text style={styles.appTitle}>StepCounter</Text>
+        <Text style={styles.appTitle}>VibeWalk</Text>
         
         <StepRing steps={steps || 0} goal={goal || 10000} />
 

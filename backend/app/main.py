@@ -8,14 +8,14 @@ from .analytics import analyze_steps
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
-    print("Starting Step Counter AI Analytics Engine...")
+    print("Starting VibeWalk AI Analytics Engine...")
     yield
     # Shutdown logic
     print("Shutting down...")
 
 app = FastAPI(
-    title="Step Counter AI Analytics",
-    description="Backend for Step Counter AI Analytics App",
+    title="VibeWalk AI Analytics",
+    description="Backend for VibeWalk AI Analytics App",
     version="1.0.0",
     lifespan=lifespan
 )
