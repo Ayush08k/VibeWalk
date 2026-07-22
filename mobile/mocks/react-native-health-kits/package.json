@@ -1,0 +1,6 @@
+{
+  "name": "@mbdayo/react-native-health-kits",
+  "version": "2.0.0",
+  "main": "index.js",
+  "description": "Local development mock for @mbdayo/react-native-health-kits — generates realistic simulated step data for testing"
+}
