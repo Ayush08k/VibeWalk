@@ -1,7 +1,10 @@
 /**
  * Mock implementation of @mbdayo/react-native-health-kits
  *
- * Generates realistic simulated step data for development and testing.
+ * For HISTORICAL days: generates deterministic simulated step data.
+ * For TODAY: returns 0 — the real step count is handled by
+ * healthService.ts using expo-sensors Pedometer directly.
+ *
  * In production, this would be replaced by the real native module.
  */
 
@@ -12,7 +15,7 @@ const PermissionType = {
 };
 
 let _initialized = false;
-let _permissionGranted = true; // Auto-grant in dev
+let _permissionGranted = true;
 
 /**
  * Initialize the health SDK.
@@ -39,15 +42,14 @@ async function checkPermission(permission) {
 }
 
 /**
- * Generate a realistic step count for a given day.
- * Uses day-of-week patterns: weekdays ~8000-12000, weekends ~4000-9000.
+ * Generate deterministic daily step count for historical dates.
+ * Weekdays ~8000-12000, weekends ~4000-9000.
  */
 function generateDailySteps(date) {
   const day = date.getDay();
   const isWeekend = day === 0 || day === 6;
   const base = isWeekend ? 5500 : 9000;
   const variance = isWeekend ? 3000 : 4000;
-  // Seed from date for consistency
   const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
   const pseudoRandom = Math.abs(Math.sin(seed * 9301 + 49297) % 1);
   return Math.round(base + (pseudoRandom - 0.5) * variance);
@@ -55,7 +57,9 @@ function generateDailySteps(date) {
 
 /**
  * Query step count records for a date range.
- * Returns an array of records matching HealthKit/Health Connect shape.
+ *
+ * For TODAY: returns 0 (real steps come from Pedometer in healthService).
+ * For PAST DAYS: returns deterministic simulated data.
  */
 async function queryStepCount({ startDate, endDate }) {
   if (!_initialized) {
@@ -65,37 +69,29 @@ async function queryStepCount({ startDate, endDate }) {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const records = [];
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-  // Generate one record per day
   const current = new Date(start.getFullYear(), start.getMonth(), start.getDate());
   const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
 
   while (current <= endDay) {
-    const isToday =
-      current.getDate() === new Date().getDate() &&
-      current.getMonth() === new Date().getMonth() &&
-      current.getFullYear() === new Date().getFullYear();
+    const currentStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+    const isToday = currentStr === todayStr;
 
-    let steps = generateDailySteps(current);
-
-    // If today, scale by how far through the day we are
-    if (isToday) {
-      const now = new Date();
-      const hoursElapsed = now.getHours() + now.getMinutes() / 60;
-      const dayFraction = hoursElapsed / 16; // Assume 16 active hours
-      steps = Math.round(steps * Math.min(dayFraction, 1));
-    }
+    // Today returns 0 — real steps handled by healthService via Pedometer
+    const steps = isToday ? 0 : generateDailySteps(current);
 
     records.push({
       startDate: new Date(current).toISOString(),
       endDate: new Date(current.getTime() + 86400000).toISOString(),
       value: steps,
       steps: steps,
-      sourceName: 'StepCounter Mock',
-      sourceId: 'com.stepcounter.mock',
+      sourceName: 'VibeWalk',
+      sourceId: 'com.vibewalk',
       metadata: {
         dataOrigin: {
-          packageName: 'com.stepcounter.mock',
+          packageName: 'com.vibewalk',
         },
       },
     });

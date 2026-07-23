@@ -5,11 +5,11 @@ import {
   queryStepCount,
   PermissionType,
 } from '@mbdayo/react-native-health-kits';
+import { Pedometer } from 'expo-sensors';
 import { DailyStepRecord, normalizeStepData, fillMissingDays } from '../utils/normalize';
 
 /**
  * Initializes the health SDK.
- * @returns {Promise<void>} Resolves when initialization is complete.
  */
 export async function initializeHealth(): Promise<void> {
   try {
@@ -21,7 +21,6 @@ export async function initializeHealth(): Promise<void> {
 
 /**
  * Requests permission to read step data.
- * @returns {Promise<boolean>} True if permission is granted.
  */
 export async function requestStepPermission(): Promise<boolean> {
   try {
@@ -34,7 +33,6 @@ export async function requestStepPermission(): Promise<boolean> {
 
 /**
  * Checks if permission to read step data is granted.
- * @returns {Promise<boolean>} True if permission is granted.
  */
 export async function checkStepPermission(): Promise<boolean> {
   try {
@@ -45,23 +43,43 @@ export async function checkStepPermission(): Promise<boolean> {
 }
 
 /**
- * Retrieves the total steps taken today from midnight local time to now.
- * @returns {Promise<number>} Total steps for today.
+ * Retrieves the total steps taken today using the device's native Pedometer.
+ *
+ * Uses expo-sensors Pedometer API which taps into the hardware step counter
+ * (CMPedometer on iOS, TYPE_STEP_COUNTER on Android).
+ * Steps only increase when the user actually walks.
+ *
+ * Falls back to the mock data if the pedometer is unavailable.
  */
 export async function getTodaySteps(): Promise<number> {
   try {
+    // Try the real pedometer first
+    const isAvailable = await Pedometer.isAvailableAsync();
+
+    if (isAvailable) {
+      const midnight = new Date();
+      midnight.setHours(0, 0, 0, 0);
+      const now = new Date();
+
+      const result = await Pedometer.getStepCountAsync(midnight, now);
+      if (result && typeof result.steps === 'number') {
+        return result.steps;
+      }
+    }
+
+    // Fall back to mock if pedometer not available
+    console.log('[healthService] Pedometer unavailable, using mock data');
     const now = new Date();
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     const records = await queryStepCount({
       startDate: midnight.toISOString(),
       endDate: now.toISOString(),
     });
-    
+
     let total = 0;
     if (Array.isArray(records)) {
       for (const record of records) {
-        // Handle varying structures from native bridges gracefully
         total += (record as any).value || (record as any).steps || 0;
       }
     }
@@ -73,22 +91,40 @@ export async function getTodaySteps(): Promise<number> {
 
 /**
  * Retrieves normalized step history for the specified number of days.
- * @param {number} days Number of days to retrieve history for, defaults to 30.
- * @returns {Promise<DailyStepRecord[]>} Normalized and filled array of step records.
+ *
+ * Today's entry uses the real Pedometer count.
+ * Historical entries come from the mock/health kit.
  */
 export async function getStepHistory(days: number = 30): Promise<DailyStepRecord[]> {
   try {
     const now = new Date();
     const past = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     past.setDate(past.getDate() - days);
-    
+
     const records = await queryStepCount({
       startDate: past.toISOString(),
       endDate: now.toISOString(),
     });
-    
+
     const normalized = normalizeStepData(records);
-    return fillMissingDays(normalized, days);
+    const filled = fillMissingDays(normalized, days);
+
+    // Replace today's entry with real pedometer data
+    try {
+      const todaySteps = await getTodaySteps();
+      const todayIndex = filled.length - 1;
+      if (todayIndex >= 0) {
+        filled[todayIndex] = {
+          ...filled[todayIndex],
+          steps: todaySteps,
+          source: 'Pedometer',
+        };
+      }
+    } catch {
+      // Keep mock data if pedometer fails
+    }
+
+    return filled;
   } catch (error) {
     throw new Error(`Failed to get step history: ${error instanceof Error ? error.message : String(error)}`);
   }

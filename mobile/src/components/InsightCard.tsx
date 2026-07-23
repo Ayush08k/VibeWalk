@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.glassBg || 'rgba(255,255,255,0.05)',
-    borderColor: Colors.glassBorder || 'rgba(255,255,255,0.1)',
+    backgroundColor: '#121214',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
     borderLeftWidth: 4,
     borderRadius: BorderRadius?.xl || 20,
