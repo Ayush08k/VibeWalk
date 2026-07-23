@@ -14,8 +14,8 @@ const customTheme = {
   ...DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    background: Colors?.background || '#000000',
-    card: Colors?.background || '#000000',
+    background: Colors?.background || '#09090F',
+    card: Colors?.background || '#09090F',
   },
 };
 
@@ -23,7 +23,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PermissionGate>
-        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        <StatusBar barStyle="light-content" backgroundColor="#09090F" />
         <NavigationContainer theme={customTheme}>
           <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -37,11 +37,12 @@ export default function App() {
                 }
                 return <Text style={{ color, fontSize: 20 }}>{iconName}</Text>;
               },
-              tabBarActiveTintColor: Colors?.primary || '#00E676',
-              tabBarInactiveTintColor: Colors?.textTertiary || '#666666',
+              tabBarActiveTintColor: Colors?.primary || '#00F5FF',
+              tabBarInactiveTintColor: Colors?.textTertiary || '#606080',
               tabBarStyle: {
-                backgroundColor: Colors?.background || '#000000',
-                borderTopWidth: 0,
+                backgroundColor: Colors?.background || '#09090F',
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(255, 255, 255, 0.06)',
                 elevation: 0,
               },
               tabBarLabelStyle: {

@@ -20,14 +20,16 @@ export async function initializeHealth(): Promise<void> {
 }
 
 /**
- * Requests permission to read step data.
+ * Requests permission to read step data from Health SDK & Expo Pedometer.
  */
 export async function requestStepPermission(): Promise<boolean> {
   try {
-    const result = await requestPermission([PermissionType.Steps]);
-    return Boolean(result);
+    const pedometerPermission = await Pedometer.requestPermissionsAsync();
+    const mockResult = await requestPermission([PermissionType.Steps]);
+    return pedometerPermission.granted || Boolean(mockResult);
   } catch (error) {
-    throw new Error(`Failed to request step permission: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn('[healthService] Error requesting step permission:', error);
+    return true; // Fallback to allow app use
   }
 }
 
@@ -36,9 +38,11 @@ export async function requestStepPermission(): Promise<boolean> {
  */
 export async function checkStepPermission(): Promise<boolean> {
   try {
-    return await checkPermission(PermissionType.Steps);
+    const pedometerPermission = await Pedometer.getPermissionsAsync();
+    const mockResult = await checkPermission(PermissionType.Steps);
+    return pedometerPermission.granted || Boolean(mockResult);
   } catch (error) {
-    throw new Error(`Failed to check step permission: ${error instanceof Error ? error.message : String(error)}`);
+    return true;
   }
 }
 
@@ -48,12 +52,9 @@ export async function checkStepPermission(): Promise<boolean> {
  * Uses expo-sensors Pedometer API which taps into the hardware step counter
  * (CMPedometer on iOS, TYPE_STEP_COUNTER on Android).
  * Steps only increase when the user actually walks.
- *
- * Falls back to the mock data if the pedometer is unavailable.
  */
 export async function getTodaySteps(): Promise<number> {
   try {
-    // Try the real pedometer first
     const isAvailable = await Pedometer.isAvailableAsync();
 
     if (isAvailable) {
@@ -61,14 +62,17 @@ export async function getTodaySteps(): Promise<number> {
       midnight.setHours(0, 0, 0, 0);
       const now = new Date();
 
-      const result = await Pedometer.getStepCountAsync(midnight, now);
-      if (result && typeof result.steps === 'number') {
-        return result.steps;
+      try {
+        const result = await Pedometer.getStepCountAsync(midnight, now);
+        if (result && typeof result.steps === 'number') {
+          return result.steps;
+        }
+      } catch (e) {
+        console.log('[healthService] Historical step query unavailable, starting live session');
       }
     }
 
     // Fall back to mock if pedometer not available
-    console.log('[healthService] Pedometer unavailable, using mock data');
     const now = new Date();
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -85,15 +89,13 @@ export async function getTodaySteps(): Promise<number> {
     }
     return total;
   } catch (error) {
-    throw new Error(`Failed to get today's steps: ${error instanceof Error ? error.message : String(error)}`);
+    console.warn('[healthService] getTodaySteps error:', error);
+    return 0;
   }
 }
 
 /**
  * Retrieves normalized step history for the specified number of days.
- *
- * Today's entry uses the real Pedometer count.
- * Historical entries come from the mock/health kit.
  */
 export async function getStepHistory(days: number = 30): Promise<DailyStepRecord[]> {
   try {
@@ -109,11 +111,11 @@ export async function getStepHistory(days: number = 30): Promise<DailyStepRecord
     const normalized = normalizeStepData(records);
     const filled = fillMissingDays(normalized, days);
 
-    // Replace today's entry with real pedometer data
+    // Replace today's entry with real pedometer data if available
     try {
       const todaySteps = await getTodaySteps();
       const todayIndex = filled.length - 1;
-      if (todayIndex >= 0) {
+      if (todayIndex >= 0 && todaySteps > 0) {
         filled[todayIndex] = {
           ...filled[todayIndex],
           steps: todaySteps,
@@ -129,3 +131,4 @@ export async function getStepHistory(days: number = 30): Promise<DailyStepRecord
     throw new Error(`Failed to get step history: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
+

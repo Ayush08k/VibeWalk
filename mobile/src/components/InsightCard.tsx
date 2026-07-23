@@ -32,11 +32,11 @@ export default function InsightCard({ insight, onDismiss }: InsightCardProps) {
 
   const getAccentColor = (severity: string) => {
     switch (severity) {
-      case 'success': return '#00E676';
-      case 'warning': return '#FF6D00';
-      case 'alert': return '#FF1744';
+      case 'success': return '#00F5FF';
+      case 'warning': return '#FF9900';
+      case 'alert': return '#FF0055';
       case 'info':
-      default: return '#448AFF';
+      default: return '#9D00FF';
     }
   };
 
@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#121214',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#12121A',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
     borderLeftWidth: 4,
     borderRadius: BorderRadius?.xl || 20,

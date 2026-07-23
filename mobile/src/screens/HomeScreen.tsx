@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useIsFocused } from '@react-navigation/native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
+  withSpring,
   FadeInDown,
-  FadeInUp,
 } from 'react-native-reanimated';
 import StepRing from '../components/StepRing';
 import InsightCard from '../components/InsightCard';
@@ -15,7 +16,7 @@ import { useSteps } from '../hooks/useSteps';
 import { useStepHistory } from '../hooks/useStepHistory';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { estimateCalories, estimateDistanceKm, estimateActiveMinutes } from '../utils/normalize';
-import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../theme/theme';
+import { Colors, FontSize, FontWeight, BorderRadius } from '../theme/theme';
 
 /**
  * Returns a greeting based on the current hour.
@@ -52,18 +53,50 @@ function getTimeSince(date: Date | null): string {
 }
 
 export default function HomeScreen() {
-  const [refreshing, setRefreshing] = useState(false);
-  const { steps, previousSteps, goal, loading, error, lastUpdated, refresh: refreshSteps } = useSteps();
+  const isFocused = useIsFocused();
+  const pageOpacity = useSharedValue(0);
+  const pageTranslateX = useSharedValue(-25);
+
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const {
+    steps,
+    previousSteps,
+    goal,
+    loading,
+    error,
+    lastUpdated,
+    isSimulating,
+    refresh: refreshSteps,
+    addSteps,
+    toggleSimulateWalk,
+  } = useSteps();
+
   const { history, refresh: refreshHistory } = useStepHistory();
   const { analytics, loading: analyticsLoading } = useAnalytics(history, goal);
   const [dismissedInsights, setDismissedInsights] = useState<string[]>([]);
-  const [, setTick] = useState(0); // force re-render for "time since" updates
+  const [, setTick] = useState<number>(0);
+
+  // Tab transition on focus
+  useEffect(() => {
+    if (isFocused) {
+      pageOpacity.value = withTiming(1, { duration: 300 });
+      pageTranslateX.value = withSpring(0, { damping: 18, stiffness: 140 });
+    } else {
+      pageOpacity.value = 0;
+      pageTranslateX.value = -25;
+    }
+  }, [isFocused]);
+
+  const pageAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: pageOpacity.value,
+    transform: [{ translateX: pageTranslateX.value }],
+  }));
 
   // Pulse the live dot
   const liveDotOpacity = useSharedValue(1);
   useEffect(() => {
     liveDotOpacity.value = withRepeat(
-      withTiming(0.3, { duration: 1000 }),
+      withTiming(0.2, { duration: 900 }),
       -1,
       true,
     );
@@ -75,7 +108,7 @@ export default function HomeScreen() {
 
   // Update "time since" every 5 seconds
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 5000);
+    const timer = setInterval(() => setTick((t: number) => t + 1), 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -88,12 +121,16 @@ export default function HomeScreen() {
   const calories = estimateCalories ? estimateCalories(steps) : 0;
   const distance = estimateDistanceKm ? estimateDistanceKm(steps) : 0;
   const activeMin = estimateActiveMinutes ? estimateActiveMinutes(steps) : 0;
+  const pace = activeMin > 0 ? Math.round(steps / activeMin) : 0;
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return '#00E676';
-    if (score >= 50) return '#FF6D00';
-    return '#FF1744';
+  const getScoreTier = (score: number) => {
+    if (score >= 85) return { label: 'OPTIMAL', color: '#00F5FF' };
+    if (score >= 65) return { label: 'HEALTHY', color: '#9D00FF' };
+    if (score >= 45) return { label: 'MODERATE', color: '#FF9900' };
+    return { label: 'LOW ACTIVITY', color: '#FF0055' };
   };
+
+  const scoreTier = getScoreTier(analytics?.wellnessScore || 0);
 
   const visibleInsights = (analytics?.insights || []).filter(
     (_insight: any, index: number) => !dismissedInsights.includes(String(index))
@@ -101,68 +138,136 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00E676" />}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Header ── */}
-        <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.headerContainer}>
-          <View>
-            <Text style={styles.greeting}>{getGreeting()} 👋</Text>
-            <Text style={styles.dateText}>{getFormattedDate()}</Text>
+      <Animated.View style={[{ flex: 1 }, pageAnimatedStyle]}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00F5FF" />}
+          showsVerticalScrollIndicator={false}
+        >
+        {/* ── Top Bar ── */}
+        <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.topBar}>
+          <View style={styles.brandCapsule}>
+            <Text style={styles.brandIcon}>⚡</Text>
+            <Text style={styles.brandTitle}>VIBEWALK</Text>
           </View>
-          <View style={styles.liveIndicator}>
+          <View style={styles.dateCapsule}>
+            <Text style={styles.dateCapsuleText}>{getFormattedDate()}</Text>
+          </View>
+          <View style={styles.liveCapsule}>
             <Animated.View style={[styles.liveDot, liveDotStyle]} />
-            <Text style={styles.liveText}>Live</Text>
+            <Text style={styles.liveCapsuleText}>{isSimulating ? 'SIMULATING' : 'LIVE'}</Text>
           </View>
         </Animated.View>
 
-        {/* ── Step Ring ── */}
+        {/* ── Header Greeting ── */}
+        <Animated.View entering={FadeInDown.delay(50).duration(500).springify()} style={styles.greetingHeader}>
+          <Text style={styles.greetingTitle}>{getGreeting()}, Walker 👋</Text>
+          <Text style={styles.greetingSub}>
+            {lastUpdated ? `Sync: ${getTimeSince(lastUpdated)}` : 'Syncing pedometer...'}
+          </Text>
+        </Animated.View>
+
+        {/* ── Hero Concentric Dial ── */}
         <Animated.View entering={FadeInDown.delay(100).duration(600).springify()}>
           <StepRing steps={steps || 0} goal={goal || 10000} previousSteps={previousSteps} />
         </Animated.View>
 
-        {/* ── Last Updated ── */}
-        <Text style={styles.lastUpdated}>
-          {lastUpdated ? `Updated ${getTimeSince(lastUpdated)}` : 'Loading...'}
-        </Text>
+        {/* ── Action Control Dock ── */}
+        <Animated.View entering={FadeInDown.delay(150).duration(600).springify()} style={styles.actionDockRow}>
+          <Pressable style={styles.dockButton} onPress={() => addSteps(100)}>
+            <Text style={styles.dockButtonIcon}>⚡</Text>
+            <Text style={styles.dockButtonText}>+100 Steps</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.dockButton, isSimulating ? styles.dockButtonActive : null]}
+            onPress={toggleSimulateWalk}
+          >
+            <Text style={styles.dockButtonIcon}>{isSimulating ? '⏸' : '▶'}</Text>
+            <Text style={[styles.dockButtonText, isSimulating ? styles.dockButtonActiveText : null]}>
+              {isSimulating ? 'Pause Walk' : 'Auto Walk'}
+            </Text>
+          </Pressable>
+        </Animated.View>
 
-        {/* ── Stats Row ── */}
-        <Animated.View entering={FadeInDown.delay(200).duration(600).springify()} style={styles.statsRow}>
-          <View style={[styles.statCard, styles.statCardCalories]}>
-            <Text style={styles.statIcon}>🔥</Text>
-            <Text style={styles.statValue}>{calories}</Text>
-            <Text style={styles.statLabel}>Calories</Text>
+        {/* ── 4-Grid Activity Dashboard Cards ── */}
+        <Animated.View entering={FadeInDown.delay(200).duration(600).springify()} style={styles.metricsGrid}>
+          {/* Calories Card */}
+          <View style={[styles.metricCard, styles.metricCardCalories]}>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricIcon}>🔥</Text>
+              <Text style={styles.metricTag}>CALORIES</Text>
+            </View>
+            <Text style={styles.metricValue}>{calories}</Text>
+            <Text style={styles.metricSubLabel}>kcal burned</Text>
+            <View style={styles.metricMiniTrack}>
+              <View style={[styles.metricMiniFill, { width: `${Math.min((calories / 400) * 100, 100)}%`, backgroundColor: '#FF007A' }]} />
+            </View>
           </View>
-          <View style={[styles.statCard, styles.statCardDistance]}>
-            <Text style={styles.statIcon}>📏</Text>
-            <Text style={styles.statValue}>{distance.toFixed(1)}</Text>
-            <Text style={styles.statLabel}>Km</Text>
+
+          {/* Distance Card */}
+          <View style={[styles.metricCard, styles.metricCardDistance]}>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricIcon}>📏</Text>
+              <Text style={styles.metricTag}>DISTANCE</Text>
+            </View>
+            <Text style={styles.metricValue}>{distance.toFixed(1)}</Text>
+            <Text style={styles.metricSubLabel}>kilometers</Text>
+            <View style={styles.metricMiniTrack}>
+              <View style={[styles.metricMiniFill, { width: `${Math.min((distance / 8) * 100, 100)}%`, backgroundColor: '#00F5FF' }]} />
+            </View>
           </View>
-          <View style={[styles.statCard, styles.statCardActive]}>
-            <Text style={styles.statIcon}>⏱</Text>
-            <Text style={styles.statValue}>{activeMin}</Text>
-            <Text style={styles.statLabel}>Min</Text>
+
+          {/* Active Min Card */}
+          <View style={[styles.metricCard, styles.metricCardActive]}>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricIcon}>⏱</Text>
+              <Text style={styles.metricTag}>ACTIVE TIME</Text>
+            </View>
+            <Text style={styles.metricValue}>{activeMin}</Text>
+            <Text style={styles.metricSubLabel}>active mins</Text>
+            <View style={styles.metricMiniTrack}>
+              <View style={[styles.metricMiniFill, { width: `${Math.min((activeMin / 60) * 100, 100)}%`, backgroundColor: '#9D00FF' }]} />
+            </View>
+          </View>
+
+          {/* Cadence Pace Card */}
+          <View style={[styles.metricCard, styles.metricCardPace]}>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricIcon}>⚡</Text>
+              <Text style={styles.metricTag}>WALK PACE</Text>
+            </View>
+            <Text style={styles.metricValue}>{pace}</Text>
+            <Text style={styles.metricSubLabel}>steps / min</Text>
+            <View style={styles.metricMiniTrack}>
+              <View style={[styles.metricMiniFill, { width: `${Math.min((pace / 120) * 100, 100)}%`, backgroundColor: '#FF9900' }]} />
+            </View>
           </View>
         </Animated.View>
 
-        {/* ── Wellness Score ── */}
-        <Animated.View entering={FadeInDown.delay(300).duration(600).springify()} style={styles.scoreContainer}>
-          <View>
-            <Text style={styles.scoreTitle}>Wellness Score</Text>
-            <Text style={styles.scoreSubtitle}>Based on 30-day activity</Text>
+        {/* ── Wellness Performance Gauge ── */}
+        <Animated.View entering={FadeInDown.delay(300).duration(600).springify()} style={styles.performanceCard}>
+          <View style={styles.performanceLeft}>
+            <Text style={styles.performanceTitle}>Wellness Performance</Text>
+            <Text style={styles.performanceSubtitle}>Based on 30-day activity trend</Text>
+            <View style={[styles.tierTag, { backgroundColor: `${scoreTier.color}15`, borderColor: `${scoreTier.color}40` }]}>
+              <Text style={[styles.tierTagText, { color: scoreTier.color }]}>{scoreTier.label}</Text>
+            </View>
           </View>
-          <View style={[styles.scoreBadge, { borderColor: getScoreColor(analytics?.wellnessScore || 0) }]}>
-            <Text style={[styles.scoreText, { color: getScoreColor(analytics?.wellnessScore || 0) }]}>
+          <View style={[styles.scoreDial, { borderColor: scoreTier.color }]}>
+            <Text style={[styles.scoreDialNumber, { color: scoreTier.color }]}>
               {analytics?.wellnessScore || 0}
             </Text>
+            <Text style={styles.scoreDialLabel}>SCORE</Text>
           </View>
         </Animated.View>
 
-        {/* ── Insights ── */}
+        {/* ── AI Insights ── */}
         <Animated.View entering={FadeInDown.delay(400).duration(600).springify()} style={styles.insightsSection}>
-          <Text style={styles.sectionTitle}>Insights</Text>
+          <View style={styles.insightsHeader}>
+            <Text style={styles.sectionTitle}>Smart Insights</Text>
+            <Text style={styles.insightsBadge}>AI ANALYTICS</Text>
+          </View>
+
           {analyticsLoading ? (
             <>
               <View style={styles.skeleton} />
@@ -173,23 +278,24 @@ export default function HomeScreen() {
               <InsightCard
                 key={`insight-${index}`}
                 insight={insight}
-                onDismiss={() => setDismissedInsights(prev => [...prev, String(index)])}
+                onDismiss={() => setDismissedInsights((prev: string[]) => [...prev, String(index)])}
               />
             ))
           ) : (
             <View style={styles.emptyInsights}>
               <Text style={styles.emptyEmoji}>📊</Text>
-              <Text style={styles.emptyTitle}>No Insights Yet</Text>
+              <Text style={styles.emptyTitle}>Insights Synchronized</Text>
               <Text style={styles.emptyDescription}>
-                Keep walking! Insights will appear as we analyze your activity patterns over time.
+                Keep walking! Insights will update as we process your activity patterns over time.
               </Text>
             </View>
           )}
         </Animated.View>
 
-        {/* Bottom spacer for tab bar */}
-        <View style={{ height: 20 }} />
+        {/* Spacer for bottom tab bar */}
+        <View style={{ height: 24 }} />
       </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -197,158 +303,297 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#09090F',
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
   },
-  // ── Header ──
-  headerContainer: {
+
+  // ── Top Bar ──
+  topBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 4,
-    paddingHorizontal: 4,
+    marginTop: 4,
+    marginBottom: 12,
   },
-  greeting: {
-    color: '#FFFFFF',
-    fontSize: FontSize?.title || 22,
-    fontWeight: FontWeight?.bold || 'bold',
-  },
-  dateText: {
-    color: '#888888',
-    fontSize: FontSize?.sm || 12,
-    marginTop: 2,
-  },
-  liveIndicator: {
+  brandCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+    backgroundColor: '#141422',
+    borderColor: 'rgba(0, 245, 255, 0.2)',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  brandIcon: {
+    fontSize: 12,
+  },
+  brandTitle: {
+    color: '#00F5FF',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+  },
+  dateCapsule: {
+    backgroundColor: '#12121A',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  dateCapsuleText: {
+    color: '#A0A0C0',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  liveCapsule: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 245, 255, 0.12)',
+    borderColor: 'rgba(0, 245, 255, 0.25)',
+    borderWidth: 1,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: 20,
     gap: 6,
   },
   liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#00E676',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00F5FF',
   },
-  liveText: {
-    color: '#00E676',
+  liveCapsuleText: {
+    color: '#00F5FF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+
+  // ── Header Greeting ──
+  greetingHeader: {
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  greetingTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  greetingSub: {
+    color: '#606080',
     fontSize: 11,
-    fontWeight: '600',
+    marginTop: 2,
+    fontWeight: '500',
   },
-  // ── Last Updated ──
-  lastUpdated: {
-    textAlign: 'center',
-    color: '#555555',
-    fontSize: 11,
-    marginTop: -8,
-    marginBottom: 16,
-  },
-  // ── Stats Row ──
-  statsRow: {
+
+  // ── Action Control Dock ──
+  actionDockRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  dockButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#141422',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    gap: 6,
+  },
+  dockButtonIcon: {
+    fontSize: 12,
+    color: '#00F5FF',
+  },
+  dockButtonText: {
+    color: '#A0A0C0',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  dockButtonActive: {
+    backgroundColor: 'rgba(0, 245, 255, 0.15)',
+    borderColor: '#00F5FF',
+  },
+  dockButtonActiveText: {
+    color: '#00F5FF',
+  },
+
+  // ── Metrics Grid ──
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 16,
+    gap: 10,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderColor: 'rgba(255,255,255,0.08)',
+  metricCard: {
+    width: '48%',
+    backgroundColor: '#12121A',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderRadius: BorderRadius?.lg || 16,
+    borderRadius: 18,
     padding: 16,
+  },
+  metricCardCalories: {
+    borderColor: 'rgba(255, 0, 122, 0.25)',
+    backgroundColor: 'rgba(255, 0, 122, 0.05)',
+  },
+  metricCardDistance: {
+    borderColor: 'rgba(0, 245, 255, 0.25)',
+    backgroundColor: 'rgba(0, 245, 255, 0.05)',
+  },
+  metricCardActive: {
+    borderColor: 'rgba(157, 0, 255, 0.25)',
+    backgroundColor: 'rgba(157, 0, 255, 0.05)',
+  },
+  metricCardPace: {
+    borderColor: 'rgba(255, 153, 0, 0.25)',
+    backgroundColor: 'rgba(255, 153, 0, 0.05)',
+  },
+  metricHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  statCardCalories: {
-    borderColor: 'rgba(255, 109, 0, 0.25)',
-    backgroundColor: 'rgba(255, 109, 0, 0.08)',
-  },
-  statCardDistance: {
-    borderColor: 'rgba(68, 138, 255, 0.25)',
-    backgroundColor: 'rgba(68, 138, 255, 0.08)',
-  },
-  statCardActive: {
-    borderColor: 'rgba(0, 230, 118, 0.25)',
-    backgroundColor: 'rgba(0, 230, 118, 0.08)',
-  },
-  statIcon: {
-    fontSize: 24,
+    gap: 6,
     marginBottom: 8,
   },
-  statValue: {
+  metricIcon: {
+    fontSize: 16,
+  },
+  metricTag: {
+    color: '#8080A0',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  metricValue: {
     color: '#FFFFFF',
-    fontSize: FontSize?.lg || 18,
-    fontWeight: FontWeight?.bold || 'bold',
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
-  statLabel: {
-    color: '#AAAAAA',
-    fontSize: FontSize?.xs || 10,
-    marginTop: 4,
+  metricSubLabel: {
+    color: '#606080',
+    fontSize: 10,
+    marginTop: 2,
+    marginBottom: 10,
   },
-  // ── Wellness Score ──
-  scoreContainer: {
+  metricMiniTrack: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  metricMiniFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+
+  // ── Performance Card ──
+  performanceCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#121214',
-    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#12121A',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 1,
-    borderRadius: BorderRadius?.lg || 16,
+    borderRadius: 20,
     padding: 20,
     marginBottom: 20,
   },
-  scoreTitle: {
-    color: '#FFFFFF',
-    fontSize: FontSize?.md || 14,
-    fontWeight: FontWeight?.semibold || '600',
+  performanceLeft: {
+    flex: 1,
+    marginRight: 12,
   },
-  scoreSubtitle: {
-    color: '#666666',
+  performanceTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  performanceSubtitle: {
+    color: '#606080',
     fontSize: 11,
     marginTop: 2,
+    marginBottom: 10,
   },
-  scoreBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  tierTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  tierTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  scoreDial: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scoreText: {
-    fontSize: FontSize?.lg || 18,
-    fontWeight: FontWeight?.bold || 'bold',
+  scoreDialNumber: {
+    fontSize: 20,
+    fontWeight: '900',
   },
+  scoreDialLabel: {
+    fontSize: 8,
+    color: '#606080',
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+
   // ── Insights ──
   insightsSection: {
     marginTop: 4,
   },
+  insightsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: FontSize?.lg || 18,
-    fontWeight: FontWeight?.bold || 'bold',
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  insightsBadge: {
+    color: '#00F5FF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    backgroundColor: 'rgba(0, 245, 255, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   skeleton: {
     height: 72,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: BorderRadius?.xl || 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 20,
     marginVertical: 6,
   },
-  // ── Empty Insights ──
   emptyInsights: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: '#12121A',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderRadius: BorderRadius?.xl || 20,
+    borderRadius: 20,
     padding: 28,
     marginVertical: 8,
   },
@@ -358,13 +603,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: '#FFFFFF',
-    fontSize: FontSize?.md || 14,
-    fontWeight: FontWeight?.semibold || '600',
+    fontSize: 14,
+    fontWeight: '700',
     marginBottom: 6,
   },
   emptyDescription: {
-    color: '#888888',
-    fontSize: FontSize?.sm || 12,
+    color: '#707090',
+    fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
   },

@@ -18,16 +18,15 @@ export default function BarChart({ data, goal }: BarChartProps) {
     const isCurrentDay = index === data.length - 1;
     const ratio = item.steps / (goal || 1);
 
-    // Color coding: green if goal met, orange if below 50%, grey for past days
     let barColor;
     if (isCurrentDay) {
-      barColor = ratio >= 1 ? '#00E676' : ratio >= 0.5 ? '#00E676' : '#FF6D00';
+      barColor = ratio >= 1 ? '#00F5FF' : ratio >= 0.5 ? '#9D00FF' : '#FF0055';
     } else if (ratio >= 1) {
-      barColor = 'rgba(0, 230, 118, 0.7)'; // goal met — green
+      barColor = 'rgba(0, 245, 255, 0.85)';
     } else if (ratio >= 0.5) {
-      barColor = 'rgba(255, 255, 255, 0.2)'; // moderate — subtle
+      barColor = 'rgba(157, 0, 255, 0.45)';
     } else {
-      barColor = 'rgba(255, 109, 0, 0.4)'; // low — orange tint
+      barColor = 'rgba(255, 0, 85, 0.45)';
     }
 
     return {
@@ -62,7 +61,7 @@ export default function BarChart({ data, goal }: BarChartProps) {
         showReferenceLine1
         referenceLine1Position={goal}
         referenceLine1Config={{
-          color: 'rgba(0, 230, 118, 0.25)',
+          color: 'rgba(0, 245, 255, 0.3)',
           type: 'dashed' as const,
           dashWidth: 4,
           dashGap: 4,
@@ -76,15 +75,15 @@ export default function BarChart({ data, goal }: BarChartProps) {
       {/* Legend */}
       <View style={styles.legendRow}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#00E676' }]} />
-          <Text style={styles.legendText}>Goal met</Text>
+          <View style={[styles.legendDot, { backgroundColor: '#00F5FF' }]} />
+          <Text style={styles.legendText}>Goal Met</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: 'rgba(255,255,255,0.2)' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#9D00FF' }]} />
           <Text style={styles.legendText}>Moderate</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: 'rgba(255, 109, 0, 0.5)' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#FF0055' }]} />
           <Text style={styles.legendText}>Low</Text>
         </View>
       </View>
@@ -94,8 +93,8 @@ export default function BarChart({ data, goal }: BarChartProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#121214',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#12121A',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
     borderRadius: BorderRadius?.xl || 20,
     padding: Spacing?.lg || 20,
@@ -115,17 +114,19 @@ const styles = StyleSheet.create({
   avgBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 230, 118, 0.1)',
+    backgroundColor: 'rgba(0, 245, 255, 0.1)',
+    borderColor: 'rgba(0, 245, 255, 0.25)',
+    borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   avgLabel: {
-    color: 'rgba(255,255,255,0.5)',
+    color: '#8080A0',
     fontSize: 11,
   },
   avgValue: {
-    color: '#00E676',
+    color: '#00F5FF',
     fontSize: 12,
     fontWeight: 'bold',
   },

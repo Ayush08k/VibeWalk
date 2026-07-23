@@ -7,53 +7,57 @@
 
 export const Colors = {
   // Backgrounds
-  background: '#000000',
-  surfaceElevated: '#0A0A0A',
-  surfaceCard: '#141414',
-  surfaceCardHover: '#1A1A1A',
+  background: '#09090F',
+  surfaceElevated: '#12121A',
+  surfaceCard: '#181824',
+  surfaceCardHover: '#202030',
 
-  // Primary accent — Electric Green
-  primary: '#00E676',
-  primaryDim: '#00C853',
-  primaryGlow: 'rgba(0, 230, 118, 0.35)',
-  primaryMuted: 'rgba(0, 230, 118, 0.15)',
+  // Primary accent — Electric Neon Cyan
+  primary: '#00F5FF',
+  primaryDim: '#00C8D6',
+  primaryGlow: 'rgba(0, 245, 255, 0.35)',
+  primaryMuted: 'rgba(0, 245, 255, 0.15)',
 
-  // Secondary accent — Electric Blue
-  secondary: '#448AFF',
-  secondaryDim: '#2979FF',
-  secondaryGlow: 'rgba(68, 138, 255, 0.35)',
+  // Secondary accent — Cyber Violet
+  secondary: '#9D00FF',
+  secondaryDim: '#7A00CC',
+  secondaryGlow: 'rgba(157, 0, 255, 0.35)',
+
+  // Tertiary accent — Neon Magenta
+  accent: '#FF007A',
+  accentGlow: 'rgba(255, 0, 122, 0.35)',
 
   // Status colors
-  success: '#00E676',
-  warning: '#FF6D00',
-  warningGlow: 'rgba(255, 109, 0, 0.35)',
-  danger: '#FF1744',
-  info: '#448AFF',
+  success: '#00F5FF',
+  warning: '#FF9900',
+  warningGlow: 'rgba(255, 153, 0, 0.35)',
+  danger: '#FF0055',
+  info: '#9D00FF',
 
   // Text
   textPrimary: '#FFFFFF',
-  textSecondary: '#B0B0B0',
-  textTertiary: '#666666',
-  textDisabled: '#444444',
+  textSecondary: '#A0A0C0',
+  textTertiary: '#606080',
+  textDisabled: '#404055',
 
   // Chart
-  chartBarActive: '#00E676',
-  chartBarPast: '#2A2A2A',
-  chartBarPastFill: '#333333',
-  chartGridLine: '#1A1A1A',
-  chartTooltipBg: '#1E1E1E',
+  chartBarActive: '#00F5FF',
+  chartBarPast: '#1A1A28',
+  chartBarPastFill: '#242436',
+  chartGridLine: '#1A1A28',
+  chartTooltipBg: '#1A1A28',
 
   // Ring
-  ringTrack: '#1A1A1A',
-  ringProgress: '#00E676',
-  ringExceeded: '#448AFF',
-  ringLow: '#FF6D00',
+  ringTrack: '#161622',
+  ringProgress: '#00F5FF',
+  ringExceeded: '#9D00FF',
+  ringLow: '#FF9900',
 
   // Misc
-  divider: '#1A1A1A',
-  overlay: 'rgba(0, 0, 0, 0.7)',
-  glassBg: 'rgba(20, 20, 20, 0.85)',
-  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  divider: '#1A1A28',
+  overlay: 'rgba(9, 9, 15, 0.85)',
+  glassBg: 'rgba(18, 18, 26, 0.85)',
+  glassBorder: 'rgba(255, 255, 255, 0.1)',
 } as const;
 
 export const Spacing = {
