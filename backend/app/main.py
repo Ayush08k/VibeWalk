@@ -2,8 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .models import StepAnalyticsRequest, StepAnalyticsResponse
-from .analytics import analyze_steps
+from .models import StepAnalyticsRequest, StepAnalyticsResponse, WalkPlanRequest, WalkPlanResponse
+from .analytics import analyze_steps, plan_walk
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,3 +35,8 @@ async def health_check():
 @app.post("/api/v1/analyze", response_model=StepAnalyticsResponse)
 async def analyze_endpoint(request: StepAnalyticsRequest):
     return analyze_steps(request.daily_steps, request.goal)
+
+@app.post("/api/v1/plan-walk", response_model=WalkPlanResponse)
+async def plan_walk_endpoint(request: WalkPlanRequest):
+    return plan_walk(request.target_steps, request.stride_length_m)
+

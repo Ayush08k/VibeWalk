@@ -5,6 +5,9 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeScreen from './screens/HomeScreen';
 import HistoryScreen from './screens/HistoryScreen';
+import TrackerScreen from './screens/TrackerScreen';
+import PlannerScreen from './screens/PlannerScreen';
+import BadgesScreen from './screens/BadgesScreen';
 import PermissionGate from './components/PermissionGate';
 import { Colors } from './theme/theme';
 
@@ -29,29 +32,35 @@ export default function App() {
             screenOptions={({ route }) => ({
               headerShown: false,
               tabBarIcon: ({ focused, color }) => {
-                let iconName;
-                if (route.name === 'Today') {
-                  iconName = focused ? '●' : '○';
-                } else if (route.name === 'History') {
-                  iconName = focused ? '▊' : '▫';
-                }
-                return <Text style={{ color, fontSize: 20 }}>{iconName}</Text>;
+                let iconSymbol = '●';
+                if (route.name === 'Today') iconSymbol = focused ? '⚡' : '⚡';
+                else if (route.name === 'GPS Walk') iconSymbol = focused ? '📍' : '🗺️';
+                else if (route.name === 'AI Planner') iconSymbol = focused ? '🤖' : '💡';
+                else if (route.name === 'Badges') iconSymbol = focused ? '🏆' : '🏅';
+                else if (route.name === 'History') iconSymbol = focused ? '📊' : '📈';
+                return <Text style={{ color, fontSize: 16 }}>{iconSymbol}</Text>;
               },
               tabBarActiveTintColor: Colors?.primary || '#00F5FF',
               tabBarInactiveTintColor: Colors?.textTertiary || '#606080',
               tabBarStyle: {
                 backgroundColor: Colors?.background || '#09090F',
                 borderTopWidth: 1,
-                borderTopColor: 'rgba(255, 255, 255, 0.06)',
+                borderTopColor: 'rgba(255, 255, 255, 0.08)',
                 elevation: 0,
+                height: 60,
+                paddingBottom: 8,
+                paddingTop: 6,
               },
               tabBarLabelStyle: {
-                fontSize: 12,
-                fontWeight: '500' as const,
+                fontSize: 10,
+                fontWeight: '700' as const,
               },
             })}
           >
             <Tab.Screen name="Today" component={HomeScreen} />
+            <Tab.Screen name="GPS Walk" component={TrackerScreen} />
+            <Tab.Screen name="AI Planner" component={PlannerScreen} />
+            <Tab.Screen name="Badges" component={BadgesScreen} />
             <Tab.Screen name="History" component={HistoryScreen} />
           </Tab.Navigator>
         </NavigationContainer>
@@ -59,4 +68,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-

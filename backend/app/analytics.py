@@ -5,8 +5,38 @@ from .models import (
     StepAnalyticsResponse,
     InsightItem,
     WeeklyComparison,
-    BestDay
+    BestDay,
+    WalkPlanResponse,
+    TimeWindow,
+    SuggestedRoute
 )
+
+def plan_walk(target_steps: int, stride_length_m: float = 0.75) -> WalkPlanResponse:
+    distance_km = round((target_steps * stride_length_m) / 1000.0, 2)
+    duration_mins = max(1, round(target_steps / 100.0))
+    calories = max(1, round(target_steps * 0.045))
+    
+    time_windows = [
+        TimeWindow(time="07:30 AM", label="Morning Peak", reason="Ideal circadian window for metabolic activation & vitamin D."),
+        TimeWindow(time="01:15 PM", label="Post-Lunch Stroll", reason="Blunts postprandial glucose spikes and improves focus."),
+        TimeWindow(time="06:45 PM", label="Sunset Cool Down", reason="Helps lower cortisol and promotes nocturnal sleep.")
+    ]
+    
+    routes = [
+        SuggestedRoute(title="Cyber Park Loop", distance_km=round(distance_km, 2), description="Paved urban park trail with flat terrain.", surface="Asphalt / Turf"),
+        SuggestedRoute(title="Riverside Promenade", distance_km=round(distance_km * 1.15, 2), description="Scenic boardwalk route with gentle incline.", surface="Boardwalk"),
+        SuggestedRoute(title="Metropolitan Circuit", distance_km=round(distance_km * 0.85, 2), description="Quick high-cadence city block route.", surface="Paved Sidewalk")
+    ]
+    
+    return WalkPlanResponse(
+        target_steps=target_steps,
+        estimated_duration_mins=duration_mins,
+        estimated_calories=calories,
+        distance_km=distance_km,
+        recommended_time_windows=time_windows,
+        suggested_routes=routes
+    )
+
 
 def analyze_steps(daily_steps: list[int], goal: int) -> StepAnalyticsResponse:
     """

@@ -40,3 +40,31 @@ class StepAnalyticsResponse(BaseModel):
     best_day: BestDay
     total_steps: int
     streak_days: int
+
+class WalkPlanRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    target_steps: int = Field(3000, gt=0)
+    stride_length_m: float = Field(0.75, gt=0)
+
+class TimeWindow(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    time: str
+    label: str
+    reason: str
+
+class SuggestedRoute(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    title: str
+    distance_km: float
+    description: str
+    surface: str
+
+class WalkPlanResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    target_steps: int
+    estimated_duration_mins: int
+    estimated_calories: int
+    distance_km: float
+    recommended_time_windows: list[TimeWindow]
+    suggested_routes: list[SuggestedRoute]
+

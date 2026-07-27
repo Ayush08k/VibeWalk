@@ -12,6 +12,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import StepRing from '../components/StepRing';
 import InsightCard from '../components/InsightCard';
+import HealthSyncBanner from '../components/HealthSyncBanner';
+import WidgetPreviewCard from '../components/WidgetPreviewCard';
 import { useSteps } from '../hooks/useSteps';
 import { useStepHistory } from '../hooks/useStepHistory';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -260,6 +262,16 @@ export default function HomeScreen() {
             <Text style={styles.scoreDialLabel}>SCORE</Text>
           </View>
         </Animated.View>
+
+        {/* ── Health Platform Sync Banner ── */}
+        <HealthSyncBanner />
+
+        {/* ── System Widget Preview Card ── */}
+        <WidgetPreviewCard
+          steps={steps}
+          goal={goal}
+          streakDays={analytics?.streakDays || 0}
+        />
 
         {/* ── AI Insights ── */}
         <Animated.View entering={FadeInDown.delay(400).duration(600).springify()} style={styles.insightsSection}>

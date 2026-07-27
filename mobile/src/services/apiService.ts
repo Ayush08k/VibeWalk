@@ -41,6 +41,90 @@ interface AnalyticsRequest {
   goal: number;
 }
 
+export interface TimeWindow {
+  time: string;
+  label: string;
+  reason: string;
+}
+
+export interface SuggestedRoute {
+  title: string;
+  distanceKm: number;
+  description: string;
+  surface: string;
+}
+
+export interface WalkPlanResponse {
+  targetSteps: number;
+  estimatedDurationMins: number;
+  estimatedCalories: number;
+  distanceKm: number;
+  recommendedTimeWindows: TimeWindow[];
+  suggestedRoutes: SuggestedRoute[];
+}
+
+/**
+ * AI Route & Walk Planner
+ */
+export async function planWalk(
+  targetSteps: number,
+  strideLengthM: number = 0.75
+): Promise<WalkPlanResponse> {
+  try {
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/api/v1/plan-walk`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_steps: targetSteps, stride_length_m: strideLengthM }),
+      },
+      8000
+    );
+
+    if (!response.ok) {
+      throw new Error(`Backend returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      targetSteps: data.target_steps,
+      estimatedDurationMins: data.estimated_duration_mins,
+      estimatedCalories: data.estimated_calories,
+      distanceKm: data.distance_km,
+      recommendedTimeWindows: data.recommended_time_windows || [],
+      suggestedRoutes: (data.suggested_routes || []).map((r: any) => ({
+        title: r.title,
+        distanceKm: r.distance_km,
+        description: r.description,
+        surface: r.surface,
+      })),
+    };
+  } catch (error) {
+    console.warn('[apiService] Backend planWalk fallback triggered:', error);
+    const dist = Number(((targetSteps * strideLengthM) / 1000).toFixed(2));
+    const mins = Math.max(1, Math.round(targetSteps / 100));
+    const cals = Math.max(1, Math.round(targetSteps * 0.045));
+
+    return {
+      targetSteps,
+      estimatedDurationMins: mins,
+      estimatedCalories: cals,
+      distanceKm: dist,
+      recommendedTimeWindows: [
+        { time: '07:30 AM', label: 'Morning Peak', reason: 'Ideal circadian window for metabolic activation & vitamin D.' },
+        { time: '01:15 PM', label: 'Post-Lunch Stroll', reason: 'Blunts postprandial glucose spikes and improves afternoon focus.' },
+        { time: '06:45 PM', label: 'Sunset Cool Down', reason: 'Helps lower cortisol and promotes nocturnal sleep.' },
+      ],
+      suggestedRoutes: [
+        { title: 'Cyber Park Loop', distanceKm: dist, description: 'Paved urban park trail with flat terrain.', surface: 'Asphalt / Turf' },
+        { title: 'Riverside Promenade', distanceKm: Number((dist * 1.15).toFixed(2)), description: 'Scenic boardwalk route with gentle incline.', surface: 'Boardwalk' },
+        { title: 'Metropolitan Circuit', distanceKm: Number((dist * 0.85).toFixed(2)), description: 'Quick high-cadence city block route.', surface: 'Paved Sidewalk' },
+      ],
+    };
+  }
+}
+
+
 /**
  * Sends the 30-day step array to the backend for AI analysis.
  *
