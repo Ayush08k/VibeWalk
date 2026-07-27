@@ -1,6 +1,6 @@
 # 👟 VibeWalk — Next-Gen AI Step Tracker & Health Analytics
 
-**VibeWalk** is a modern, high-performance React Native mobile application built on **Expo SDK 54** paired with an **AI Analytics Engine**. It tracks daily steps, calories burned, distance covered, active duration, walking cadence, and 30-day activity trends with a futuristic **Electric Cyan & Cyber Violet OLED dark interface**, **smooth 90fps UI-thread transitions**, and **hardware sensor step filtering**.
+**VibeWalk** is a modern, high-performance React Native mobile application built on **Expo SDK 54** paired with an **AI Analytics Engine**. It tracks daily steps, calories burned, distance covered, active duration, walking cadence, GPS routes, achievement milestones, and 30-day activity trends with a futuristic **Electric Cyan & Cyber Violet OLED dark interface**, **smooth 90fps UI-thread transitions**, and **hardware sensor step filtering**.
 
 ---
 
@@ -23,12 +23,32 @@
 - **Dual-Gradient 30-Day Chart**: Built with `react-native-gifted-charts`, featuring a target reference threshold line, average steps pill badge, and color-coded bars (Cyan for goal met, Violet for moderate, Red/Orange for low).
 - **Weekly Pace Comparison Split Card**: Dual progress bars comparing this week's daily average versus last week's daily average with trend percentage diff badges (`+14% ↗`).
 
-### 4. ⚡ 90fps Tab Focus Screen Transitions
-- **Bi-Directional Liquid Slide & Cross-Fade**: Hardware-accelerated UI-thread screen transitions using `useIsFocused` from `@react-navigation/native` and `react-native-reanimated`.
-- **Today Screen**: Slides in smoothly from the left when selected.
-- **History Screen**: Slides in smoothly from the right when selected.
+### 4. 🗺️ Live GPS Outdoor Route Tracker
+- **Real-Time Mapping**: Interactive map integration using `react-native-maps` to display real-time user movement polyline trails (`#00F5FF`).
+- **Live Outdoor Stats**: Track live pace (min/km), current speed (km/h), elapsed duration, and distance during outdoor walking or running sessions.
+- **Session Controls**: Start, pause, resume, and finish outdoor activity tracking with auto-calculated summaries.
 
-### 5. 🛡️ Rhythmic Cadence Step Filter (Zero False Steps While Sitting)
+### 5. 🏆 Gamified Achievement & Badge System
+- **Tiered Milestone Badges**: Unlockable achievements categorized across step goals, streak milestones, distance benchmarks, and active time consistency.
+- **Visual Progress Tiers**: Color-coded badges (`#00F5FF`, `#9D00FF`, `#FF007A`) showing completion percentage, unlocked dates, and locked criteria previews.
+
+### 6. 📅 AI Health Planner & Goal Recommendations
+- **Dynamic Weekly Schedules**: Customized daily step targets based on recent activity performance and AI wellness score recommendations.
+- **Adaptive Milestones**: Tailored recommendations for rest days, active recovery, and peak performance targets.
+
+### 7. 📲 Lock Screen & Home Screen Widget Previews
+- **Live Widget Cards**: Interactive preview components (`WidgetPreviewCard.tsx`) rendering lock screen and home screen widget layouts.
+- **Quick Metrics Glance**: Displays current step count, ring completion arc, and wellness score directly in widget formats.
+
+### 8. 🔔 Smart Push Notifications & Health Platform Sync
+- **Local Reminders**: Automated step reminder notifications using `expo-notifications` (inactivity reminders, streak celebration alerts, and target approach updates).
+- **HealthSync Integration**: Native HealthKit (iOS) / Health Connect (Android) synchronization banner and bridge helpers (`healthService.ts`).
+
+### 9. ⚡ 90fps Tab Focus Screen Transitions
+- **Bi-Directional Liquid Slide & Cross-Fade**: Hardware-accelerated UI-thread screen transitions using `useIsFocused` from `@react-navigation/native` and `react-native-reanimated`.
+- **Seamless Navigation**: Smooth transitions across Today, History, Tracker, Planner, and Badges screens.
+
+### 10. 🛡️ Rhythmic Cadence Step Filter (Zero False Steps While Sitting)
 - **Impact Acceleration Threshold (`1.42g`)**: Prevents slight hand movements or wrist turns while sitting/resting from triggering false steps.
 - **Rhythmic Step Cadence Window (`[320ms, 1100ms]`)**: Requires at least **3 consecutive rhythmic steps** matching human walking cadence before steps are counted. Isolated hand twitches while resting or sleeping are completely discarded.
 
@@ -88,13 +108,15 @@ AI power is integrated at both the **Backend Engine** and **Client-Side Fallback
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Workflow Tools
 
 ### **Mobile Application (`/mobile`)**
 - **Framework**: React Native SDK 54 (`expo@~54.0.0`, `react-native@0.81.5`, `react@19.1.0`)
 - **Navigation**: `@react-navigation/native` & `@react-navigation/bottom-tabs`
 - **Animations**: `react-native-reanimated` (90fps UI-thread spring animations)
 - **Data Visualization**: `react-native-gifted-charts` & `react-native-svg`
+- **Maps & GPS**: `react-native-maps` & `expo-location`
+- **Notifications**: `expo-notifications`
 - **Sensors & Pedometer**: `expo-sensors` (`Accelerometer` & `Pedometer` with Rhythmic Cadence Filtering)
 
 ### **AI Backend (`/backend`)**
@@ -102,18 +124,24 @@ Available in both **Node.js / Express** and **Python / FastAPI**:
 - **Node.js**: Express.js (ES Modules, CORS enabled)
 - **Python**: FastAPI, Pydantic, Uvicorn
 
+### **Development & Workflow Tools**
+- **Expo CLI**: `npx expo start` for metro bundle server, QR scanning, and live reload.
+- **TypeScript Compiler (`tsc`)**: Type-checking across mobile source files.
+- **Metro Bundler**: Fast JavaScript/TypeScript module bundling.
+- **Uvicorn / Nodemon**: Auto-reloading development servers for FastAPI and Express.
+
 ---
 
-## 📁 Repository Structure
+## 📁 Repository & File Structure
 
 ```text
 stepCounter/
 ├── backend/                  # AI Analytics Engine Backend
 │   ├── app/
-│   │   ├── analytics.js      # JS AI Analytics Engine
-│   │   ├── analytics.py      # Python AI Analytics Engine
-│   │   ├── main.js           # Express.js entry point
-│   │   ├── main.py           # FastAPI entry point
+│   │   ├── analytics.js      # JS AI Analytics Engine logic
+│   │   ├── analytics.py      # Python AI Analytics Engine logic
+│   │   ├── main.js           # Express.js entry point & endpoints
+│   │   ├── main.py           # FastAPI entry point & routes
 │   │   └── models.py         # Pydantic schema models
 │   ├── package.json
 │   └── requirements.txt
@@ -121,15 +149,43 @@ stepCounter/
 └── mobile/                   # React Native Mobile App (Expo SDK 54)
     ├── mocks/                # HealthKit / Pedometer mock module
     ├── src/
-    │   ├── components/       # StepRing, BarChart, InsightCard, PermissionGate
-    │   ├── hooks/            # useSteps (Hybrid Engine), useStepHistory, useAnalytics
-    │   ├── screens/          # HomeScreen, HistoryScreen, PermissionScreen
-    │   ├── services/         # apiService (AI Client & Fallback), healthService
-    │   └── theme/            # Global OLED Cyber Dark color system
-    ├── app.json
-    ├── babel.config.js
-    ├── index.js
-    └── package.json
+    │   ├── components/       # UI Components
+    │   │   ├── BarChart.tsx          # 30-day interactive bar chart
+    │   │   ├── HealthSyncBanner.tsx  # HealthKit / Health Connect sync banner
+    │   │   ├── InsightCard.tsx       # AI insight card renderer
+    │   │   ├── PermissionGate.tsx    # Permission gate wrapper
+    │   │   ├── SplitTableCard.tsx    # Weekly pace comparison split card
+    │   │   ├── StepRing.tsx          # Holographic concentric hero dial
+    │   │   └── WidgetPreviewCard.tsx # Lock & home screen widget preview card
+    │   ├── hooks/            # Custom React Hooks
+    │   │   ├── useAnalytics.ts       # AI analytics hook
+    │   │   ├── useStepHistory.ts     # Step history state manager
+    │   │   └── useSteps.ts           # Sensor & hybrid pedometer hook
+    │   ├── screens/          # Main Tab & Feature Screens
+    │   │   ├── BadgesScreen.tsx      # Gamified achievements & milestone badges
+    │   │   ├── HistoryScreen.tsx     # 7-day selector & 30-day analytics history
+    │   │   ├── HomeScreen.tsx        # Main dashboard screen
+    │   │   ├── PermissionScreen.tsx   # Sensor & location permissions screen
+    │   │   ├── PlannerScreen.tsx     # AI health planner & goal targets
+    │   │   └── TrackerScreen.tsx     # Live GPS route map & outdoor activity tracker
+    │   ├── services/         # App Services & Integrations
+    │   │   ├── apiService.ts         # Backend API client & offline fallback engine
+    │   │   ├── badgeService.ts       # Achievement & badge evaluation service
+    │   │   ├── gpsService.ts         # Location tracking & route management
+    │   │   ├── healthService.ts      # Native health platform sync bridge
+    │   │   ├── notificationService.ts# Local push notification scheduling
+    │   │   └── widgetService.ts      # Widget configuration service
+    │   ├── theme/            # Styling & Color System
+    │   │   └── colors.ts             # OLED Cyber Dark color palette
+    │   └── utils/            # Helper Utilities
+    │       └── normalize.ts          # Responsive font & layout normalization
+    ├── App.tsx               # Root App Component & Navigation Stack
+    ├── app.json              # Expo application configuration
+    ├── babel.config.js       # Babel compiler configuration
+    ├── index.js              # Entry point registration
+    ├── metro.config.js       # Metro bundler config
+    ├── package.json          # Node dependencies & scripts
+    └── tsconfig.json         # TypeScript configuration
 ```
 
 ---
@@ -138,13 +194,23 @@ stepCounter/
 
 ### 1. Prerequisites
 - **Node.js**: `>= 20.x`
-- **Expo Go** app installed on your physical mobile phone (iOS / Android)
+- **Expo Go** app installed on your physical mobile phone (iOS / Android) or simulator/emulator.
 
 ---
 
-### 2. Start the Backend Server (Optional)
+## 🚀 Step-by-Step Execution Workflow
 
-#### Option A: Node.js Backend
+### Step 1: Clone & Setup
+```bash
+git clone https://github.com/Ayush08k/VibeWalk.git
+cd VibeWalk
+```
+
+---
+
+### Step 2: Start the Backend Server (Optional)
+
+#### Option A: Node.js / Express Backend
 ```bash
 cd backend
 npm install
@@ -152,23 +218,24 @@ npm run dev
 ```
 > Server runs at `http://localhost:8000`
 
-#### Option B: Python FastAPI Backend
+#### Option B: Python / FastAPI Backend
 ```bash
 cd backend
 python -m venv venv
-# Windows:
+
+# On Windows:
 .\venv\Scripts\activate
-# macOS/Linux:
+# On macOS / Linux:
 source venv/bin/activate
 
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
-> API Docs available at `http://localhost:8000/docs`
+> API interactive documentation available at `http://localhost:8000/docs`
 
 ---
 
-### 3. Run the Mobile App in Expo Go
+### Step 3: Launch the React Native Mobile Application
 
 ```bash
 cd mobile
@@ -176,9 +243,12 @@ npm install
 npx expo start
 ```
 
-1. Open **Expo Go** on your Android or iOS device.
-2. Scan the terminal **QR code**.
-3. Enjoy VibeWalk in real time!
+#### Running Options:
+1. **Physical Device (Recommended)**:
+   - Open **Expo Go** on your iOS or Android phone.
+   - Scan the QR code printed in the terminal.
+2. **Android Emulator**: Press `a` in the terminal after launching Expo CLI.
+3. **iOS Simulator** (macOS only): Press `i` in the terminal.
 
 ---
 
