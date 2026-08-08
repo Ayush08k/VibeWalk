@@ -40,14 +40,17 @@ export async function exportAndShareGpx(session: WorkoutSession): Promise<boolea
   try {
     const xmlContent = buildGpxXml(session);
     const fileName = `VibeWalk_Session_${Date.now()}.gpx`;
-    const filePath = `${FileSystem.documentDirectory || FileSystem.cacheDirectory}${fileName}`;
+    const docDir = (FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '';
+    const filePath = `${docDir}${fileName}`;
 
-    await FileSystem.writeAsStringAsync(filePath, xmlContent, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
+    if ((FileSystem as any).writeAsStringAsync) {
+      await (FileSystem as any).writeAsStringAsync(filePath, xmlContent, {
+        encoding: (FileSystem as any).EncodingType?.UTF8 || 'utf8',
+      });
+    }
 
     const canShare = await Sharing.isAvailableAsync();
-    if (canShare) {
+    if (canShare && filePath) {
       await Sharing.shareAsync(filePath, {
         mimeType: 'application/gpx+xml',
         dialogTitle: 'Export VibeWalk GPX Route',
