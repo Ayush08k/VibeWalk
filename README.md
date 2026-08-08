@@ -1,6 +1,6 @@
 # 👟 VibeWalk — Next-Gen AI Step Tracker & Health Analytics
 
-**VibeWalk** is a modern, high-performance React Native mobile application built on **Expo SDK 54** paired with an **AI Analytics Engine**. It tracks daily steps, calories burned, distance covered, active duration, walking cadence, GPS routes, achievement milestones, and 30-day activity trends with a futuristic **Electric Cyan & Cyber Violet OLED dark interface**, **smooth 90fps UI-thread transitions**, and **hardware sensor step filtering**.
+**VibeWalk** is a modern, high-performance React Native mobile application built on **Expo SDK 54** paired with an **AI Analytics Engine**. It tracks daily steps, calories burned, distance covered, active duration, walking cadence, GPS routes, achievement milestones, and 30-day activity trends with a futuristic **Electric Cyan & Cyber Violet OLED dark interface**, **smooth liquid flow UI-thread transitions**, **audio coaching & cadence soundscapes**, and **hardware sensor step filtering**.
 
 ---
 
@@ -11,44 +11,47 @@
 - **Inner Sub-Arc**: Sub-metric calorie target track.
 - **Center Readout**: Ultra-bold hero step count, target goal readout (`TARGET 10,000`), mini progress bar, and dynamic status tags (`⚡ GOAL CRUSHED`, `🔥 ALMOST THERE`).
 
-### 2. 📊 4-Grid Activity Metrics & Action Dock
+### 2. 🌊 Liquid Flow Transitions & Staggered Section Animations
+- **Tab Focus Morphing (`LiquidScreenWrapper.tsx`)**: Fluid UI-thread slide, scale, and cross-fade animations on tab switches powered by `react-native-reanimated` and `@react-navigation/native`.
+- **Staggered Wave Sections (`LiquidSection.tsx`)**: Cards, grids, and timeline elements enter with organic staggered spring physics (`FadeInDown.springify().damping(13)`) and touch rebound interaction.
+
+### 3. 🎵 Cadence Beat Sync & Audio Voice Cues
+- **Live Audio Coach (`voiceCoachService.ts`)**: Speech-synthesized text-to-speech updates using `expo-speech` announcing session start, pause, finish, and per-kilometer split updates (*"Kilometer 1 complete. Average pace: 5'32" per kilometer"*).
+- **Cadence Soundscapes (`soundscapeService.ts`)**: Ambient audio tracks (`Synthwave Pulse`, `Cyber Rain`, `Lo-Fi Walk Groove`) featuring a dynamic tempo multiplier (0.85x to 1.35x) adjusting live to your walking cadence (steps/min).
+
+### 4. 🗺️ Live GPS Route Tracker & GPX Export
+- **Real-Time Mapping**: Interactive map integration displaying real-time user movement polyline trails (`#00F5FF`).
+- **GPX Export (`gpxService.ts`)**: Export tracked workout sessions into standard `.gpx` XML files ready for Strava, Garmin, or Apple Health import using `expo-sharing`.
+- **Bookmarked Favorite Trails (`favoriteTrailsService.ts`)**: Bookmark AI-suggested routes in the AI Planner (`⭐ Save Trail`) and select them on the GPS Walk screen via a horizontal trail carousel.
+
+### 5. 🌤️ Weather & Air Quality Telemetry
+- **Environmental Status Card (`weatherService.ts`)**: Displays live outdoor environmental conditions on the GPS Walk screen including Temperature (°C/°F), Weather Condition, Humidity %, UV Index rating, Air Quality Index (AQI 1-5), and outdoor walking safety advice.
+
+### 6. 📊 4-Grid Activity Metrics & Action Dock
 - **🔥 Calories**: Burned kilocalories with individual progress mini-fill (`#FF007A`).
 - **📏 Distance**: Kilometers covered with pace calculations (`#00F5FF`).
 - **⏱ Active Duration**: Active walking minutes (`#9D00FF`).
 - **⚡ Walk Pace**: Real-time walking cadence in `steps / min` (`#FF9900`).
 - **Action Control Dock**: Floating pill dock featuring **`+100 Quick Steps`** and **`Auto Walk`** mode toggle for instant testing on desks or emulators.
 
-### 3. 📅 Interactive 7-Day Week Selector & 30-Day Activity Chart
+### 7. 📅 Interactive 7-Day Week Selector & 30-Day Activity Chart
 - **Interactive Week Selector**: Tap any weekday pill (**MON – SUN**) in History to inspect that specific day's step breakdown, date stamp, and target achievement ratio.
 - **Dual-Gradient 30-Day Chart**: Built with `react-native-gifted-charts`, featuring a target reference threshold line, average steps pill badge, and color-coded bars (Cyan for goal met, Violet for moderate, Red/Orange for low).
 - **Weekly Pace Comparison Split Card**: Dual progress bars comparing this week's daily average versus last week's daily average with trend percentage diff badges (`+14% ↗`).
 
-### 4. 🗺️ Live GPS Outdoor Route Tracker
-- **Real-Time Mapping**: Interactive map integration using `react-native-maps` to display real-time user movement polyline trails (`#00F5FF`).
-- **Live Outdoor Stats**: Track live pace (min/km), current speed (km/h), elapsed duration, and distance during outdoor walking or running sessions.
-- **Session Controls**: Start, pause, resume, and finish outdoor activity tracking with auto-calculated summaries.
-
-### 5. 🏆 Gamified Achievement & Badge System
+### 8. 🏆 Gamified Achievement & Badge System
 - **Tiered Milestone Badges**: Unlockable achievements categorized across step goals, streak milestones, distance benchmarks, and active time consistency.
 - **Visual Progress Tiers**: Color-coded badges (`#00F5FF`, `#9D00FF`, `#FF007A`) showing completion percentage, unlocked dates, and locked criteria previews.
 
-### 6. 📅 AI Health Planner & Goal Recommendations
+### 9. 🤖 AI Health Planner & Goal Recommendations
 - **Dynamic Weekly Schedules**: Customized daily step targets based on recent activity performance and AI wellness score recommendations.
-- **Adaptive Milestones**: Tailored recommendations for rest days, active recovery, and peak performance targets.
+- **Route Suggestions & Window Times**: Recommends optimal circadian walking time windows and neighborhood routes with one-tap trail bookmarking.
 
-### 7. 📲 Lock Screen & Home Screen Widget Previews
-- **Live Widget Cards**: Interactive preview components (`WidgetPreviewCard.tsx`) rendering lock screen and home screen widget layouts.
-- **Quick Metrics Glance**: Displays current step count, ring completion arc, and wellness score directly in widget formats.
+### 10. 📲 Lock Screen Live Activities & Dynamic Island Controller
+- **System Widget Previews**: Interactive preview component (`WidgetPreviewCard.tsx`) rendering Home Screen, Lock Screen, and Dynamic Island ongoing notification controls.
+- **Quick Metrics Glance**: Displays live step count, ring completion arc, and active timer telemetry directly in widget formats.
 
-### 8. 🔔 Smart Push Notifications & Health Platform Sync
-- **Local Reminders**: Automated step reminder notifications using `expo-notifications` (inactivity reminders, streak celebration alerts, and target approach updates).
-- **HealthSync Integration**: Native HealthKit (iOS) / Health Connect (Android) synchronization banner and bridge helpers (`healthService.ts`).
-
-### 9. ⚡ 90fps Tab Focus Screen Transitions
-- **Bi-Directional Liquid Slide & Cross-Fade**: Hardware-accelerated UI-thread screen transitions using `useIsFocused` from `@react-navigation/native` and `react-native-reanimated`.
-- **Seamless Navigation**: Smooth transitions across Today, History, Tracker, Planner, and Badges screens.
-
-### 10. 🛡️ Rhythmic Cadence Step Filter (Zero False Steps While Sitting)
+### 11. 🛡️ Rhythmic Cadence Step Filter (Zero False Steps While Sitting)
 - **Impact Acceleration Threshold (`1.42g`)**: Prevents slight hand movements or wrist turns while sitting/resting from triggering false steps.
 - **Rhythmic Step Cadence Window (`[320ms, 1100ms]`)**: Requires at least **3 consecutive rhythmic steps** matching human walking cadence before steps are counted. Isolated hand twitches while resting or sleeping are completely discarded.
 
@@ -113,7 +116,9 @@ AI power is integrated at both the **Backend Engine** and **Client-Side Fallback
 ### **Mobile Application (`/mobile`)**
 - **Framework**: React Native SDK 54 (`expo@~54.0.0`, `react-native@0.81.5`, `react@19.1.0`)
 - **Navigation**: `@react-navigation/native` & `@react-navigation/bottom-tabs`
-- **Animations**: `react-native-reanimated` (90fps UI-thread spring animations)
+- **Animations**: `react-native-reanimated` (UI-thread liquid flow spring animations)
+- **Audio & Voice**: `expo-speech` (Live Voice Coach TTS & Cadence Soundscapes)
+- **Sharing & Files**: `expo-sharing` & `expo-file-system` (GPX route export)
 - **Data Visualization**: `react-native-gifted-charts` & `react-native-svg`
 - **Maps & GPS**: `react-native-maps` & `expo-location`
 - **Notifications**: `expo-notifications`
@@ -123,12 +128,6 @@ AI power is integrated at both the **Backend Engine** and **Client-Side Fallback
 Available in both **Node.js / Express** and **Python / FastAPI**:
 - **Node.js**: Express.js (ES Modules, CORS enabled)
 - **Python**: FastAPI, Pydantic, Uvicorn
-
-### **Development & Workflow Tools**
-- **Expo CLI**: `npx expo start` for metro bundle server, QR scanning, and live reload.
-- **TypeScript Compiler (`tsc`)**: Type-checking across mobile source files.
-- **Metro Bundler**: Fast JavaScript/TypeScript module bundling.
-- **Uvicorn / Nodemon**: Auto-reloading development servers for FastAPI and Express.
 
 ---
 
@@ -153,10 +152,12 @@ stepCounter/
     │   │   ├── BarChart.tsx          # 30-day interactive bar chart
     │   │   ├── HealthSyncBanner.tsx  # HealthKit / Health Connect sync banner
     │   │   ├── InsightCard.tsx       # AI insight card renderer
+    │   │   ├── LiquidScreenWrapper.tsx# Fluid liquid tab focus screen wrapper
+    │   │   ├── LiquidSection.tsx     # Staggered wave section container
     │   │   ├── PermissionGate.tsx    # Permission gate wrapper
     │   │   ├── SplitTableCard.tsx    # Weekly pace comparison split card
     │   │   ├── StepRing.tsx          # Holographic concentric hero dial
-    │   │   └── WidgetPreviewCard.tsx # Lock & home screen widget preview card
+    │   │   └── WidgetPreviewCard.tsx # System Widgets & Live Activity controller
     │   ├── hooks/            # Custom React Hooks
     │   │   ├── useAnalytics.ts       # AI analytics hook
     │   │   ├── useStepHistory.ts     # Step history state manager
@@ -166,14 +167,19 @@ stepCounter/
     │   │   ├── HistoryScreen.tsx     # 7-day selector & 30-day analytics history
     │   │   ├── HomeScreen.tsx        # Main dashboard screen
     │   │   ├── PermissionScreen.tsx   # Sensor & location permissions screen
-    │   │   ├── PlannerScreen.tsx     # AI health planner & goal targets
-    │   │   └── TrackerScreen.tsx     # Live GPS route map & outdoor activity tracker
+    │   │   ├── PlannerScreen.tsx     # AI health planner & route bookmarking
+    │   │   └── TrackerScreen.tsx     # Live GPS route map, audio coach, & weather
     │   ├── services/         # App Services & Integrations
     │   │   ├── apiService.ts         # Backend API client & offline fallback engine
     │   │   ├── badgeService.ts       # Achievement & badge evaluation service
+    │   │   ├── favoriteTrailsService.ts# Bookmarked favorite routes manager
+    │   │   ├── gpxService.ts         # GPX route XML export & sharing
     │   │   ├── gpsService.ts         # Location tracking & route management
     │   │   ├── healthService.ts      # Native health platform sync bridge
     │   │   ├── notificationService.ts# Local push notification scheduling
+    │   │   ├── soundscapeService.ts  # Cadence soundscapes & dynamic tempo engine
+    │   │   ├── voiceCoachService.ts  # Audio Voice Coach TTS announcements
+    │   │   ├── weatherService.ts     # Outdoor weather & AQI telemetry
     │   │   └── widgetService.ts      # Widget configuration service
     │   ├── theme/            # Styling & Color System
     │   │   └── colors.ts             # OLED Cyber Dark color palette
@@ -240,7 +246,7 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 cd mobile
 npm install
-npx expo start
+npx expo start -c
 ```
 
 #### Running Options:
@@ -249,53 +255,6 @@ npx expo start
    - Scan the QR code printed in the terminal.
 2. **Android Emulator**: Press `a` in the terminal after launching Expo CLI.
 3. **iOS Simulator** (macOS only): Press `i` in the terminal.
-
----
-
-## 📡 API Reference
-
-### `POST /api/v1/analyze`
-Generates step analytics, wellness score, and AI insight cards.
-
-**Request:**
-```json
-{
-  "daily_steps": [7500, 9200, 10400, 8100, 11500, 12000, 9800],
-  "goal": 10000
-}
-```
-
-**Response:**
-```json
-{
-  "wellness_score": 88,
-  "trend": "up",
-  "total_steps": 68500,
-  "average_steps": 9785,
-  "streak_days": 4,
-  "best_day": { "date": "2026-07-20", "steps": 12000 },
-  "weekly_comparison": {
-    "this_week_avg": 9785,
-    "last_week_avg": 8500,
-    "change_percent": 15.1,
-    "direction": "up"
-  },
-  "insights": [
-    {
-      "emoji": "🔥",
-      "title": "4-Day Goal Streak!",
-      "description": "You've hit your 10,000 step goal 4 days in a row.",
-      "severity": "success"
-    },
-    {
-      "emoji": "🚀",
-      "title": "Trending Up",
-      "description": "You're walking 15% more than last week. Keep it up!",
-      "severity": "success"
-    }
-  ]
-}
-```
 
 ---
 
