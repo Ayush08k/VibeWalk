@@ -8,6 +8,8 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LiquidScreenWrapper from '../components/LiquidScreenWrapper';
+import LiquidSection from '../components/LiquidSection';
 import { getCyberBadges, CyberBadge } from '../services/badgeService';
 import { getTodaySteps } from '../services/healthService';
 import { Colors } from '../theme/theme';
@@ -37,87 +39,89 @@ export default function BadgesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTag}>🏆 ACHIEVEMENTS & REWARDS</Text>
-          <Text style={styles.title}>Cyber Badges</Text>
-          <Text style={styles.subtitle}>
-            Unlock holographic achievement badges as you crush daily step milestones and streak goals.
-          </Text>
-        </View>
-
-        {/* Overview Stats */}
-        <View style={styles.statsCard}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{unlockedCount} / {badges.length}</Text>
-            <Text style={styles.statLabel}>BADGES UNLOCKED</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBox}>
-            <Text style={[styles.statNumber, { color: '#FF007A' }]}>
-              {Math.round((unlockedCount / (badges.length || 1)) * 100)}%
+      <LiquidScreenWrapper>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Header */}
+          <LiquidSection delay={40} style={styles.header}>
+            <Text style={styles.headerTag}>🏆 ACHIEVEMENTS & REWARDS</Text>
+            <Text style={styles.title}>Cyber Badges</Text>
+            <Text style={styles.subtitle}>
+              Unlock holographic achievement badges as you crush daily step milestones and streak goals.
             </Text>
-            <Text style={styles.statLabel}>COMPLETION RATE</Text>
-          </View>
-        </View>
+          </LiquidSection>
 
-        {/* Filter Pills */}
-        <View style={styles.filterRow}>
-          {(['All', 'Unlocked', 'Locked'] as const).map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.filterChip, filter === tab && styles.filterChipActive]}
-              onPress={() => setFilter(tab)}
-            >
-              <Text style={[styles.filterText, filter === tab && styles.filterTextActive]}>
-                {tab}
+          {/* Overview Stats */}
+          <LiquidSection delay={100} style={styles.statsCard}>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>{unlockedCount} / {badges.length}</Text>
+              <Text style={styles.statLabel}>BADGES UNLOCKED</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statBox}>
+              <Text style={[styles.statNumber, { color: '#FF007A' }]}>
+                {Math.round((unlockedCount / (badges.length || 1)) * 100)}%
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+              <Text style={styles.statLabel}>COMPLETION RATE</Text>
+            </View>
+          </LiquidSection>
 
-        {/* Badges Grid */}
-        <View style={styles.badgeGrid}>
-          {filteredBadges.map((badge) => (
-            <TouchableOpacity
-              key={badge.id}
-              style={[
-                styles.badgeCard,
-                badge.unlocked && { borderColor: badge.glowColor, shadowColor: badge.glowColor },
-              ]}
-              onPress={() => setSelectedBadge(badge)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.iconBox, !badge.unlocked && styles.lockedIconBox]}>
-                <Text style={[styles.iconText, !badge.unlocked && { opacity: 0.3 }]}>
-                  {badge.icon}
+          {/* Filter Pills */}
+          <LiquidSection delay={160} style={styles.filterRow}>
+            {(['All', 'Unlocked', 'Locked'] as const).map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.filterChip, filter === tab && styles.filterChipActive]}
+                onPress={() => setFilter(tab)}
+              >
+                <Text style={[styles.filterText, filter === tab && styles.filterTextActive]}>
+                  {tab}
                 </Text>
-                {!badge.unlocked && <Text style={styles.lockOverlay}>🔒</Text>}
-              </View>
+              </TouchableOpacity>
+            ))}
+          </LiquidSection>
 
-              <Text style={styles.badgeTitle} numberOfLines={1}>
-                {badge.title}
-              </Text>
-              <Text style={styles.badgeCategory}>{badge.category}</Text>
+          {/* Badges Grid */}
+          <LiquidSection delay={220} style={styles.badgeGrid}>
+            {filteredBadges.map((badge) => (
+              <TouchableOpacity
+                key={badge.id}
+                style={[
+                  styles.badgeCard,
+                  badge.unlocked && { borderColor: badge.glowColor, shadowColor: badge.glowColor },
+                ]}
+                onPress={() => setSelectedBadge(badge)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.iconBox, !badge.unlocked && styles.lockedIconBox]}>
+                  <Text style={[styles.iconText, !badge.unlocked && { opacity: 0.3 }]}>
+                    {badge.icon}
+                  </Text>
+                  {!badge.unlocked && <Text style={styles.lockOverlay}>🔒</Text>}
+                </View>
 
-              {/* Mini Progress Bar */}
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${badge.progressPercent}%`,
-                      backgroundColor: badge.glowColor || '#00F5FF',
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressLabel}>{badge.progressPercent}%</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+                <Text style={styles.badgeTitle} numberOfLines={1}>
+                  {badge.title}
+                </Text>
+                <Text style={styles.badgeCategory}>{badge.category}</Text>
+
+                {/* Mini Progress Bar */}
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${badge.progressPercent}%`,
+                        backgroundColor: badge.glowColor || '#00F5FF',
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.progressLabel}>{badge.progressPercent}%</Text>
+              </TouchableOpacity>
+            ))}
+          </LiquidSection>
+        </ScrollView>
+      </LiquidScreenWrapper>
 
       {/* Detail Modal */}
       <Modal

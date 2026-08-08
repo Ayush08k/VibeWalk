@@ -18,6 +18,8 @@ import { useSteps } from '../hooks/useSteps';
 import { useStepHistory } from '../hooks/useStepHistory';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { estimateCalories, estimateDistanceKm, estimateActiveMinutes } from '../utils/normalize';
+import LiquidScreenWrapper from '../components/LiquidScreenWrapper';
+import LiquidSection from '../components/LiquidSection';
 import { Colors, FontSize, FontWeight, BorderRadius } from '../theme/theme';
 
 /**
@@ -140,14 +142,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Animated.View style={[{ flex: 1 }, pageAnimatedStyle]}>
+      <LiquidScreenWrapper>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00F5FF" />}
           showsVerticalScrollIndicator={false}
         >
         {/* ── Top Bar ── */}
-        <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.topBar}>
+        <LiquidSection delay={40} style={styles.topBar}>
           <View style={styles.brandCapsule}>
             <Text style={styles.brandIcon}>⚡</Text>
             <Text style={styles.brandTitle}>VIBEWALK</Text>
@@ -159,23 +161,23 @@ export default function HomeScreen() {
             <Animated.View style={[styles.liveDot, liveDotStyle]} />
             <Text style={styles.liveCapsuleText}>{isSimulating ? 'SIMULATING' : 'LIVE'}</Text>
           </View>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── Header Greeting ── */}
-        <Animated.View entering={FadeInDown.delay(50).duration(500).springify()} style={styles.greetingHeader}>
+        <LiquidSection delay={80} style={styles.greetingHeader}>
           <Text style={styles.greetingTitle}>{getGreeting()}, Walker 👋</Text>
           <Text style={styles.greetingSub}>
             {lastUpdated ? `Sync: ${getTimeSince(lastUpdated)}` : 'Syncing pedometer...'}
           </Text>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── Hero Concentric Dial ── */}
-        <Animated.View entering={FadeInDown.delay(100).duration(600).springify()}>
+        <LiquidSection delay={120}>
           <StepRing steps={steps || 0} goal={goal || 10000} previousSteps={previousSteps} />
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── Action Control Dock ── */}
-        <Animated.View entering={FadeInDown.delay(150).duration(600).springify()} style={styles.actionDockRow}>
+        <LiquidSection delay={160} style={styles.actionDockRow}>
           <Pressable style={styles.dockButton} onPress={() => addSteps(100)}>
             <Text style={styles.dockButtonIcon}>⚡</Text>
             <Text style={styles.dockButtonText}>+100 Steps</Text>
@@ -189,10 +191,10 @@ export default function HomeScreen() {
               {isSimulating ? 'Pause Walk' : 'Auto Walk'}
             </Text>
           </Pressable>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── 4-Grid Activity Dashboard Cards ── */}
-        <Animated.View entering={FadeInDown.delay(200).duration(600).springify()} style={styles.metricsGrid}>
+        <LiquidSection delay={200} style={styles.metricsGrid}>
           {/* Calories Card */}
           <View style={[styles.metricCard, styles.metricCardCalories]}>
             <View style={styles.metricHeader}>
@@ -244,10 +246,10 @@ export default function HomeScreen() {
               <View style={[styles.metricMiniFill, { width: `${Math.min((pace / 120) * 100, 100)}%`, backgroundColor: '#FF9900' }]} />
             </View>
           </View>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── Wellness Performance Gauge ── */}
-        <Animated.View entering={FadeInDown.delay(300).duration(600).springify()} style={styles.performanceCard}>
+        <LiquidSection delay={240} style={styles.performanceCard}>
           <View style={styles.performanceLeft}>
             <Text style={styles.performanceTitle}>Wellness Performance</Text>
             <Text style={styles.performanceSubtitle}>Based on 30-day activity trend</Text>
@@ -261,20 +263,24 @@ export default function HomeScreen() {
             </Text>
             <Text style={styles.scoreDialLabel}>SCORE</Text>
           </View>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── Health Platform Sync Banner ── */}
-        <HealthSyncBanner />
+        <LiquidSection delay={280}>
+          <HealthSyncBanner />
+        </LiquidSection>
 
         {/* ── System Widget Preview Card ── */}
-        <WidgetPreviewCard
-          steps={steps}
-          goal={goal}
-          streakDays={analytics?.streakDays || 0}
-        />
+        <LiquidSection delay={320}>
+          <WidgetPreviewCard
+            steps={steps}
+            goal={goal}
+            streakDays={analytics?.streakDays || 0}
+          />
+        </LiquidSection>
 
         {/* ── AI Insights ── */}
-        <Animated.View entering={FadeInDown.delay(400).duration(600).springify()} style={styles.insightsSection}>
+        <LiquidSection delay={360} style={styles.insightsSection}>
           <View style={styles.insightsHeader}>
             <Text style={styles.sectionTitle}>Smart Insights</Text>
             <Text style={styles.insightsBadge}>AI ANALYTICS</Text>
@@ -302,12 +308,12 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
-        </Animated.View>
+        </LiquidSection>
 
         {/* Spacer for bottom tab bar */}
         <View style={{ height: 24 }} />
       </ScrollView>
-      </Animated.View>
+      </LiquidScreenWrapper>
     </SafeAreaView>
   );
 }

@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LiquidScreenWrapper from '../components/LiquidScreenWrapper';
+import LiquidSection from '../components/LiquidSection';
 import { planWalk, WalkPlanResponse } from '../services/apiService';
 import { Colors } from '../theme/theme';
 
@@ -31,116 +33,118 @@ export default function PlannerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTag}>🤖 AI INSIGHT ENGINE</Text>
-          <Text style={styles.title}>AI Route & Walk Planner</Text>
-          <Text style={styles.subtitle}>
-            Enter your desired step target to generate optimal walking duration, calories burned, and circadian time windows.
-          </Text>
-        </View>
+      <LiquidScreenWrapper>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Header */}
+          <LiquidSection delay={40} style={styles.header}>
+            <Text style={styles.headerTag}>🤖 AI INSIGHT ENGINE</Text>
+            <Text style={styles.title}>AI Route & Walk Planner</Text>
+            <Text style={styles.subtitle}>
+              Enter your desired step target to generate optimal walking duration, calories burned, and circadian time windows.
+            </Text>
+          </LiquidSection>
 
-        {/* Input Card */}
-        <View style={styles.inputCard}>
-          <Text style={styles.inputLabel}>TARGET STEP COUNT</Text>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.textInput}
-              keyboardType="numeric"
-              value={stepInput}
-              onChangeText={setStepInput}
-              placeholder="e.g. 3000"
-              placeholderTextColor="#606080"
-            />
-            <TouchableOpacity
-              style={styles.generateButton}
-              onPress={() => handleGeneratePlan()}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator color="#09090F" size="small" />
-              ) : (
-                <Text style={styles.generateButtonText}>⚡ Plan Walk</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Quick Presets */}
-          <View style={styles.presetRow}>
-            {[1500, 3000, 5000, 8000].map((preset) => (
+          {/* Input Card */}
+          <LiquidSection delay={100} style={styles.inputCard}>
+            <Text style={styles.inputLabel}>TARGET STEP COUNT</Text>
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.textInput}
+                keyboardType="numeric"
+                value={stepInput}
+                onChangeText={setStepInput}
+                placeholder="e.g. 3000"
+                placeholderTextColor="#606080"
+              />
               <TouchableOpacity
-                key={preset}
-                style={styles.presetChip}
-                onPress={() => {
-                  setStepInput(preset.toString());
-                  handleGeneratePlan(preset);
-                }}
+                style={styles.generateButton}
+                onPress={() => handleGeneratePlan()}
+                disabled={loading}
+                activeOpacity={0.8}
               >
-                <Text style={styles.presetChipText}>{preset.toLocaleString()} steps</Text>
+                {loading ? (
+                  <ActivityIndicator color="#09090F" size="small" />
+                ) : (
+                  <Text style={styles.generateButtonText}>⚡ Plan Walk</Text>
+                )}
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Results Overview */}
-        {plan && (
-          <>
-            <View style={styles.metricsRow}>
-              <View style={styles.metricBox}>
-                <Text style={styles.metricValue}>{plan.estimatedDurationMins}m</Text>
-                <Text style={styles.metricLabel}>EST. DURATION</Text>
-              </View>
-              <View style={styles.metricBox}>
-                <Text style={[styles.metricValue, { color: '#FF007A' }]}>
-                  {plan.estimatedCalories} kcal
-                </Text>
-                <Text style={styles.metricLabel}>EST. CALORIES</Text>
-              </View>
-              <View style={styles.metricBox}>
-                <Text style={[styles.metricValue, { color: '#9D00FF' }]}>
-                  {plan.distanceKm} km
-                </Text>
-                <Text style={styles.metricLabel}>DISTANCE</Text>
-              </View>
             </View>
 
-            {/* Ideal Time Windows */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🕒 Recommended Time Windows</Text>
-              {plan.recommendedTimeWindows.map((tw, idx) => (
-                <View key={idx} style={styles.timeWindowCard}>
-                  <View style={styles.timeBadge}>
-                    <Text style={styles.timeBadgeText}>{tw.time}</Text>
-                  </View>
-                  <View style={styles.timeWindowContent}>
-                    <Text style={styles.timeLabel}>{tw.label}</Text>
-                    <Text style={styles.timeReason}>{tw.reason}</Text>
-                  </View>
-                </View>
+            {/* Quick Presets */}
+            <View style={styles.presetRow}>
+              {[1500, 3000, 5000, 8000].map((preset) => (
+                <TouchableOpacity
+                  key={preset}
+                  style={styles.presetChip}
+                  onPress={() => {
+                    setStepInput(preset.toString());
+                    handleGeneratePlan(preset);
+                  }}
+                >
+                  <Text style={styles.presetChipText}>{preset.toLocaleString()} steps</Text>
+                </TouchableOpacity>
               ))}
             </View>
+          </LiquidSection>
 
-            {/* Suggested Routes */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🛣️ Suggested Neighborhood Routes</Text>
-              {plan.suggestedRoutes.map((route, idx) => (
-                <View key={idx} style={styles.routeCard}>
-                  <View style={styles.routeHeader}>
-                    <Text style={styles.routeTitle}>{route.title}</Text>
-                    <Text style={styles.routeDist}>{route.distanceKm} km</Text>
-                  </View>
-                  <Text style={styles.routeDesc}>{route.description}</Text>
-                  <View style={styles.surfaceTag}>
-                    <Text style={styles.surfaceTagText}>Surface: {route.surface}</Text>
-                  </View>
+          {/* Results Overview */}
+          {plan && (
+            <>
+              <LiquidSection delay={160} style={styles.metricsRow}>
+                <View style={styles.metricBox}>
+                  <Text style={styles.metricValue}>{plan.estimatedDurationMins}m</Text>
+                  <Text style={styles.metricLabel}>EST. DURATION</Text>
                 </View>
-              ))}
-            </View>
-          </>
-        )}
-      </ScrollView>
+                <View style={styles.metricBox}>
+                  <Text style={[styles.metricValue, { color: '#FF007A' }]}>
+                    {plan.estimatedCalories} kcal
+                  </Text>
+                  <Text style={styles.metricLabel}>EST. CALORIES</Text>
+                </View>
+                <View style={styles.metricBox}>
+                  <Text style={[styles.metricValue, { color: '#9D00FF' }]}>
+                    {plan.distanceKm} km
+                  </Text>
+                  <Text style={styles.metricLabel}>DISTANCE</Text>
+                </View>
+              </LiquidSection>
+
+              {/* Ideal Time Windows */}
+              <LiquidSection delay={220} style={styles.section}>
+                <Text style={styles.sectionTitle}>🕒 Recommended Time Windows</Text>
+                {plan.recommendedTimeWindows.map((tw, idx) => (
+                  <View key={idx} style={styles.timeWindowCard}>
+                    <View style={styles.timeBadge}>
+                      <Text style={styles.timeBadgeText}>{tw.time}</Text>
+                    </View>
+                    <View style={styles.timeWindowContent}>
+                      <Text style={styles.timeLabel}>{tw.label}</Text>
+                      <Text style={styles.timeReason}>{tw.reason}</Text>
+                    </View>
+                  </View>
+                ))}
+              </LiquidSection>
+
+              {/* Suggested Routes */}
+              <LiquidSection delay={280} style={styles.section}>
+                <Text style={styles.sectionTitle}>🛣️ Suggested Neighborhood Routes</Text>
+                {plan.suggestedRoutes.map((route, idx) => (
+                  <View key={idx} style={styles.routeCard}>
+                    <View style={styles.routeHeader}>
+                      <Text style={styles.routeTitle}>{route.title}</Text>
+                      <Text style={styles.routeDist}>{route.distanceKm} km</Text>
+                    </View>
+                    <Text style={styles.routeDesc}>{route.description}</Text>
+                    <View style={styles.surfaceTag}>
+                      <Text style={styles.surfaceTagText}>Surface: {route.surface}</Text>
+                    </View>
+                  </View>
+                ))}
+              </LiquidSection>
+            </>
+          )}
+        </ScrollView>
+      </LiquidScreenWrapper>
     </SafeAreaView>
   );
 }

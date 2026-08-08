@@ -10,6 +10,8 @@ import Animated, {
   FadeInDown,
 } from 'react-native-reanimated';
 import BarChart from '../components/BarChart';
+import LiquidScreenWrapper from '../components/LiquidScreenWrapper';
+import LiquidSection from '../components/LiquidSection';
 import { useStepHistory } from '../hooks/useStepHistory';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { DEFAULT_STEP_GOAL, FontSize, FontWeight } from '../theme/theme';
@@ -71,14 +73,14 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <Animated.View style={[{ flex: 1 }, pageAnimatedStyle]}>
+      <LiquidScreenWrapper>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00F5FF" />}
           showsVerticalScrollIndicator={false}
         >
         {/* ── Top Title ── */}
-        <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.headerRow}>
+        <LiquidSection delay={40} style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Activity Analytics</Text>
             <Text style={styles.subtitle}>30-Day Activity & Weekly Trends</Text>
@@ -86,10 +88,10 @@ export default function HistoryScreen() {
           <View style={styles.trophyBadge}>
             <Text style={styles.trophyIcon}>🏆</Text>
           </View>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── Interactive 7-Day Week Selector ── */}
-        <Animated.View entering={FadeInDown.delay(100).duration(600).springify()} style={styles.weekCard}>
+        <LiquidSection delay={100} style={styles.weekCard}>
           <View style={styles.weekCardHeader}>
             <Text style={styles.weekTitle}>Weekly Performance</Text>
             {selectedDayData && (
@@ -132,15 +134,15 @@ export default function HistoryScreen() {
               );
             })}
           </View>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── 30-Day Bar Chart ── */}
-        <Animated.View entering={FadeInDown.delay(200).duration(600).springify()}>
+        <LiquidSection delay={160}>
           <BarChart data={history || []} goal={goal || 10000} />
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── 4-Grid Achievements ── */}
-        <Animated.View entering={FadeInDown.delay(300).duration(600).springify()} style={styles.gridContainer}>
+        <LiquidSection delay={220} style={styles.gridContainer}>
           <View style={styles.gridCard}>
             <View style={styles.gridHeader}>
               <Text style={styles.gridIcon}>📊</Text>
@@ -176,10 +178,10 @@ export default function HistoryScreen() {
             <Text style={[styles.gridValue, streak >= 3 ? { color: '#00F5FF' } : null]}>{streak} Days</Text>
             <Text style={styles.gridLabel}>Goal Streak</Text>
           </View>
-        </Animated.View>
+        </LiquidSection>
 
         {/* ── Weekly Comparison Split Card ── */}
-        <Animated.View entering={FadeInDown.delay(400).duration(600).springify()} style={styles.comparisonCard}>
+        <LiquidSection delay={280} style={styles.comparisonCard}>
           <View style={styles.comparisonHeader}>
             <View>
               <Text style={styles.comparisonTitle}>Weekly Pace Comparison</Text>
@@ -218,12 +220,12 @@ export default function HistoryScreen() {
               </View>
             </View>
           </View>
-        </Animated.View>
+        </LiquidSection>
 
-        {/* Bottom spacer */}
+        {/* Spacer for bottom tab bar */}
         <View style={{ height: 24 }} />
       </ScrollView>
-      </Animated.View>
+      </LiquidScreenWrapper>
     </SafeAreaView>
   );
 }

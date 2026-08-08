@@ -9,6 +9,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import SplitTableCard from '../components/SplitTableCard';
+import LiquidScreenWrapper from '../components/LiquidScreenWrapper';
+import LiquidSection from '../components/LiquidSection';
 import { calculateSplits, generateMockRoutePoints, SplitRecord } from '../services/gpsService';
 import { Colors } from '../theme/theme';
 
@@ -85,127 +87,131 @@ export default function TrackerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTag}>📍 GPS OUTDOOR TELEMETRY</Text>
-          <Text style={styles.title}>Live GPS Walk / Run</Text>
-          <Text style={styles.subtitle}>
-            Real-time outdoor telemetry with interactive route path map, pace splits, and cadence tracking.
-          </Text>
-        </View>
+      <LiquidScreenWrapper>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Header */}
+          <LiquidSection delay={40} style={styles.header}>
+            <Text style={styles.headerTag}>📍 GPS OUTDOOR TELEMETRY</Text>
+            <Text style={styles.title}>Live GPS Walk / Run</Text>
+            <Text style={styles.subtitle}>
+              Real-time outdoor telemetry with interactive route path map, pace splits, and cadence tracking.
+            </Text>
+          </LiquidSection>
 
-        {/* Hero Telemetry Card */}
-        <View style={styles.heroCard}>
-          <Text style={styles.heroDistance}>{distanceKm.toFixed(2)}</Text>
-          <Text style={styles.heroUnit}>KILOMETERS</Text>
+          {/* Hero Telemetry Card */}
+          <LiquidSection delay={100} style={styles.heroCard}>
+            <Text style={styles.heroDistance}>{distanceKm.toFixed(2)}</Text>
+            <Text style={styles.heroUnit}>KILOMETERS</Text>
 
-          <View style={styles.telemetryGrid}>
-            <View style={styles.telemetryItem}>
-              <Text style={styles.telemetryVal}>{formatTimer(durationSecs)}</Text>
-              <Text style={styles.telemetryLabel}>DURATION</Text>
-            </View>
-            <View style={styles.telemetryItem}>
-              <Text style={[styles.telemetryVal, { color: '#00F5FF' }]}>
-                {currentPaceMinsPerKm()}
-              </Text>
-              <Text style={styles.telemetryLabel}>PACE / KM</Text>
-            </View>
-            <View style={styles.telemetryItem}>
-              <Text style={[styles.telemetryVal, { color: '#FF007A' }]}>
-                {calories}
-              </Text>
-              <Text style={styles.telemetryLabel}>CALORIES</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* SVG Live GPS Route Map */}
-        <View style={styles.mapContainer}>
-          <View style={styles.mapHeader}>
-            <Text style={styles.mapTitle}>🌐 Interactive Route Map</Text>
-            <View style={styles.liveBadge}>
-              <View style={[styles.liveDot, isTracking && !isPaused && styles.activeLiveDot]} />
-              <Text style={styles.liveBadgeText}>
-                {isTracking ? (isPaused ? 'PAUSED' : 'LIVE GPS') : 'STANDBY'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.svgWrapper}>
-            <Svg width="100%" height={160} viewBox="0 0 320 160">
-              <Defs>
-                <LinearGradient id="pathGradient" x1="0" y1="0" x2="1" y2="0">
-                  <Stop offset="0%" stopColor="#00F5FF" stopOpacity="0.3" />
-                  <Stop offset="50%" stopColor="#00F5FF" stopOpacity="1" />
-                  <Stop offset="100%" stopColor="#9D00FF" stopOpacity="1" />
-                </LinearGradient>
-              </Defs>
-              {/* Circuit Track SVG Path */}
-              <Path
-                d="M 20 130 C 50 40, 100 140, 160 80 C 220 20, 270 120, 300 50"
-                fill="none"
-                stroke="rgba(255, 255, 255, 0.1)"
-                strokeWidth="6"
-                strokeLinecap="round"
-              />
-              <Path
-                d="M 20 130 C 50 40, 100 140, 160 80 C 220 20, 270 120, 300 50"
-                fill="none"
-                stroke="url(#pathGradient)"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray="6 4"
-              />
-              {/* Start Pin */}
-              <Circle cx="20" cy="130" r="6" fill="#39FF14" />
-              {/* Live Position Marker */}
-              <Circle cx="160" cy="80" r="8" fill="#00F5FF" />
-              <Circle cx="160" cy="80" r="14" fill="rgba(0, 245, 255, 0.25)" />
-            </Svg>
-          </View>
-
-          <View style={styles.mapFooter}>
-            <Text style={styles.footerInfo}>⚡ Cadence: {cadenceSpm} spm</Text>
-            <Text style={styles.footerInfo}>📈 Elev Gain: +{elevationGainM} m</Text>
-          </View>
-        </View>
-
-        {/* Start / Pause / Stop Action Controls */}
-        <View style={styles.controlRow}>
-          {!isTracking ? (
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={handleStart}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.startButtonText}>▶ START GPS SESSION</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.activeControls}>
-              <TouchableOpacity
-                style={[styles.pauseButton, isPaused && styles.resumeButton]}
-                onPress={handlePauseToggle}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.pauseButtonText}>
-                  {isPaused ? '▶ RESUME' : '⏸ PAUSE'}
+            <View style={styles.telemetryGrid}>
+              <View style={styles.telemetryItem}>
+                <Text style={styles.telemetryVal}>{formatTimer(durationSecs)}</Text>
+                <Text style={styles.telemetryLabel}>DURATION</Text>
+              </View>
+              <View style={styles.telemetryItem}>
+                <Text style={[styles.telemetryVal, { color: '#00F5FF' }]}>
+                  {currentPaceMinsPerKm()}
                 </Text>
-              </TouchableOpacity>
+                <Text style={styles.telemetryLabel}>PACE / KM</Text>
+              </View>
+              <View style={styles.telemetryItem}>
+                <Text style={[styles.telemetryVal, { color: '#FF007A' }]}>
+                  {calories}
+                </Text>
+                <Text style={styles.telemetryLabel}>CALORIES</Text>
+              </View>
+            </View>
+          </LiquidSection>
+
+          {/* SVG Live GPS Route Map */}
+          <LiquidSection delay={160} style={styles.mapContainer}>
+            <View style={styles.mapHeader}>
+              <Text style={styles.mapTitle}>🌐 Interactive Route Map</Text>
+              <View style={styles.liveBadge}>
+                <View style={[styles.liveDot, isTracking && !isPaused && styles.activeLiveDot]} />
+                <Text style={styles.liveBadgeText}>
+                  {isTracking ? (isPaused ? 'PAUSED' : 'LIVE GPS') : 'STANDBY'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.svgWrapper}>
+              <Svg width="100%" height={160} viewBox="0 0 320 160">
+                <Defs>
+                  <LinearGradient id="pathGradient" x1="0" y1="0" x2="1" y2="0">
+                    <Stop offset="0%" stopColor="#00F5FF" stopOpacity="0.3" />
+                    <Stop offset="50%" stopColor="#00F5FF" stopOpacity="1" />
+                    <Stop offset="100%" stopColor="#9D00FF" stopOpacity="1" />
+                  </LinearGradient>
+                </Defs>
+                {/* Circuit Track SVG Path */}
+                <Path
+                  d="M 20 130 C 50 40, 100 140, 160 80 C 220 20, 270 120, 300 50"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.1)"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                />
+                <Path
+                  d="M 20 130 C 50 40, 100 140, 160 80 C 220 20, 270 120, 300 50"
+                  fill="none"
+                  stroke="url(#pathGradient)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray="6 4"
+                />
+                {/* Start Pin */}
+                <Circle cx="20" cy="130" r="6" fill="#39FF14" />
+                {/* Live Position Marker */}
+                <Circle cx="160" cy="80" r="8" fill="#00F5FF" />
+                <Circle cx="160" cy="80" r="14" fill="rgba(0, 245, 255, 0.25)" />
+              </Svg>
+            </View>
+
+            <View style={styles.mapFooter}>
+              <Text style={styles.footerInfo}>⚡ Cadence: {cadenceSpm} spm</Text>
+              <Text style={styles.footerInfo}>📈 Elev Gain: +{elevationGainM} m</Text>
+            </View>
+          </LiquidSection>
+
+          {/* Start / Pause / Stop Action Controls */}
+          <LiquidSection delay={220} style={styles.controlRow}>
+            {!isTracking ? (
               <TouchableOpacity
-                style={styles.stopButton}
-                onPress={handleStop}
+                style={styles.startButton}
+                onPress={handleStart}
                 activeOpacity={0.8}
               >
-                <Text style={styles.stopButtonText}>⏹ FINISH</Text>
+                <Text style={styles.startButtonText}>▶ START GPS SESSION</Text>
               </TouchableOpacity>
-            </View>
-          )}
-        </View>
+            ) : (
+              <View style={styles.activeControls}>
+                <TouchableOpacity
+                  style={[styles.pauseButton, isPaused && styles.resumeButton]}
+                  onPress={handlePauseToggle}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.pauseButtonText}>
+                    {isPaused ? '▶ RESUME' : '⏸ PAUSE'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.stopButton}
+                  onPress={handleStop}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.stopButtonText}>⏹ FINISH</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </LiquidSection>
 
-        {/* Per-Kilometer Interval Splits Table */}
-        <SplitTableCard splits={splits.length > 0 ? splits : calculateSplits(2.4, 780, 105, 120)} />
-      </ScrollView>
+          {/* Per-Kilometer Interval Splits Table */}
+          <LiquidSection delay={280}>
+            <SplitTableCard splits={splits.length > 0 ? splits : calculateSplits(2.4, 780, 105, 120)} />
+          </LiquidSection>
+        </ScrollView>
+      </LiquidScreenWrapper>
     </SafeAreaView>
   );
 }
