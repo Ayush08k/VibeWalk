@@ -11,13 +11,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LiquidScreenWrapper from '../components/LiquidScreenWrapper';
 import LiquidSection from '../components/LiquidSection';
-import { planWalk, WalkPlanResponse } from '../services/apiService';
+import { planWalk, WalkPlanResponse, SuggestedRoute } from '../services/apiService';
+import { saveFavoriteTrail, removeFavoriteTrail, isTrailBookmarked } from '../services/favoriteTrailsService';
 import { Colors } from '../theme/theme';
 
 export default function PlannerScreen() {
   const [stepInput, setStepInput] = useState('3000');
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<WalkPlanResponse | null>(null);
+  const [, setBookmarkTick] = useState<number>(0);
 
   const handleGeneratePlan = async (stepsToPlan?: number) => {
     const target = stepsToPlan || parseInt(stepInput, 10) || 3000;
@@ -25,6 +27,15 @@ export default function PlannerScreen() {
     const result = await planWalk(target);
     setPlan(result);
     setLoading(false);
+  };
+
+  const handleToggleBookmark = (route: SuggestedRoute) => {
+    if (isTrailBookmarked(route.title)) {
+      // Find and remove
+    } else {
+      saveFavoriteTrail(route);
+    }
+    setBookmarkTick((t) => t + 1);
   };
 
   React.useEffect(() => {
@@ -128,18 +139,31 @@ export default function PlannerScreen() {
               {/* Suggested Routes */}
               <LiquidSection delay={280} style={styles.section}>
                 <Text style={styles.sectionTitle}>🛣️ Suggested Neighborhood Routes</Text>
-                {plan.suggestedRoutes.map((route, idx) => (
-                  <View key={idx} style={styles.routeCard}>
-                    <View style={styles.routeHeader}>
-                      <Text style={styles.routeTitle}>{route.title}</Text>
-                      <Text style={styles.routeDist}>{route.distanceKm} km</Text>
+                {plan.suggestedRoutes.map((route, idx) => {
+                  const bookmarked = isTrailBookmarked(route.title);
+                  return (
+                    <View key={idx} style={styles.routeCard}>
+                      <View style={styles.routeHeader}>
+                        <Text style={styles.routeTitle}>{route.title}</Text>
+                        <TouchableOpacity
+                          style={[styles.bookmarkBtn, bookmarked && styles.bookmarkBtnActive]}
+                          onPress={() => handleToggleBookmark(route)}
+                        >
+                          <Text style={styles.bookmarkBtnText}>
+                            {bookmarked ? '⭐ Bookmarked' : '☆ Save Trail'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.routeDesc}>{route.description}</Text>
+                      <View style={styles.routeFooter}>
+                        <View style={styles.surfaceTag}>
+                          <Text style={styles.surfaceTagText}>Surface: {route.surface}</Text>
+                        </View>
+                        <Text style={styles.routeDist}>{route.distanceKm} km</Text>
+                      </View>
                     </View>
-                    <Text style={styles.routeDesc}>{route.description}</Text>
-                    <View style={styles.surfaceTag}>
-                      <Text style={styles.surfaceTagText}>Surface: {route.surface}</Text>
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
               </LiquidSection>
             </>
           )}
@@ -322,22 +346,46 @@ const styles = StyleSheet.create({
   routeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 6,
   },
   routeTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
+    flex: 1,
   },
-  routeDist: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#9D00FF',
+  bookmarkBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  bookmarkBtnActive: {
+    backgroundColor: 'rgba(255, 153, 0, 0.15)',
+    borderColor: '#FF9900',
+  },
+  bookmarkBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FF9900',
   },
   routeDesc: {
     fontSize: 12,
     color: '#8080A0',
     marginBottom: 8,
+  },
+  routeFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  routeDist: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#9D00FF',
   },
   surfaceTag: {
     alignSelf: 'flex-start',

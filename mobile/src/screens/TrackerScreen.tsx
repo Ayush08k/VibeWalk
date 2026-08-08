@@ -5,13 +5,32 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import SplitTableCard from '../components/SplitTableCard';
 import LiquidScreenWrapper from '../components/LiquidScreenWrapper';
 import LiquidSection from '../components/LiquidSection';
-import { calculateSplits, generateMockRoutePoints, SplitRecord } from '../services/gpsService';
+import { calculateSplits, SplitRecord, WorkoutSession } from '../services/gpsService';
+import { exportAndShareGpx } from '../services/gpxService';
+import {
+  announceKmSplit,
+  getVoiceCoachConfig,
+  setVoiceCoachConfig,
+  speakAnnouncement,
+} from '../services/voiceCoachService';
+import {
+  calculateCadenceTempoMultiplier,
+  getActiveSoundscapeTrack,
+  getSoundscapePlaybackStatus,
+  setActiveSoundscape,
+  SOUNDSCAPE_TRACKS,
+  SoundscapeTrackId,
+  toggleSoundscapePlayback,
+} from '../services/soundscapeService';
+import { getFavoriteTrails, FavoriteTrail } from '../services/favoriteTrailsService';
+import { getEnvironmentalTelemetry, EnvironmentalTelemetry } from '../services/weatherService';
 import { Colors } from '../theme/theme';
 
 export default function TrackerScreen() {
@@ -23,8 +42,29 @@ export default function TrackerScreen() {
   const [cadenceSpm, setCadenceSpm] = useState(0);
   const [elevationGainM, setElevationGainM] = useState(0);
   const [splits, setSplits] = useState<SplitRecord[]>([]);
+  const [lastAnnouncedKm, setLastAnnouncedKm] = useState(0);
+
+  // Feature states
+  const [weather, setWeather] = useState<EnvironmentalTelemetry | null>(null);
+  const [voiceCoachEnabled, setVoiceCoachEnabled] = useState(true);
+  const [activeSoundscape, setActiveSoundscapeState] = useState<SoundscapeTrackId>('synthwave');
+  const [isPlayingSoundscape, setIsPlayingSoundscape] = useState(true);
+  const [favoriteTrails, setFavoriteTrails] = useState<FavoriteTrail[]>([]);
+  const [selectedTrail, setSelectedTrail] = useState<FavoriteTrail | null>(null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    loadEnvironmentAndFavorites();
+  }, []);
+
+  const loadEnvironmentAndFavorites = async () => {
+    const env = await getEnvironmentalTelemetry();
+    setWeather(env);
+    const trails = getFavoriteTrails();
+    setFavoriteTrails(trails);
+    if (trails.length > 0) setSelectedTrail(trails[0]);
+  };
 
   useEffect(() => {
     if (isTracking && !isPaused) {
@@ -37,13 +77,23 @@ export default function TrackerScreen() {
           const nextDist = Number((distanceKm + distInc).toFixed(3));
           setDistanceKm(nextDist);
 
-          setCalories(Math.round(nextDist * 52));
-          setCadenceSpm(104 + Math.round(Math.sin(nextSecs) * 6));
+          const currentCalories = Math.round(nextDist * 52);
+          const currentCadence = 104 + Math.round(Math.sin(nextSecs) * 6);
+          setCalories(currentCalories);
+          setCadenceSpm(currentCadence);
           setElevationGainM(Math.floor(nextDist * 8));
 
           // Recalculate splits
-          const computedSplits = calculateSplits(nextDist, nextSecs, 104, 52);
+          const computedSplits = calculateSplits(nextDist, nextSecs, currentCadence, 52);
           setSplits(computedSplits);
+
+          // Audio Coach announcement on every new KM
+          const fullKm = Math.floor(nextDist);
+          if (fullKm > lastAnnouncedKm && fullKm > 0) {
+            setLastAnnouncedKm(fullKm);
+            const latestSplit = computedSplits[computedSplits.length - 1];
+            announceKmSplit(fullKm, latestSplit?.paceMinsPerKm || `5'30"`, currentCalories);
+          }
 
           return nextSecs;
         });
@@ -55,20 +105,58 @@ export default function TrackerScreen() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isTracking, isPaused, distanceKm]);
+  }, [isTracking, isPaused, distanceKm, lastAnnouncedKm]);
 
   const handleStart = () => {
     setIsTracking(true);
     setIsPaused(false);
+    speakAnnouncement('Starting outdoor GPS tracking session. Stay safe and enjoy your walk!');
   };
 
   const handlePauseToggle = () => {
-    setIsPaused((prev) => !prev);
+    const nextPaused = !isPaused;
+    setIsPaused(nextPaused);
+    speakAnnouncement(nextPaused ? 'Session paused' : 'Resuming session');
   };
 
   const handleStop = () => {
     setIsTracking(false);
     setIsPaused(false);
+    speakAnnouncement(`Session finished! Total distance: ${distanceKm.toFixed(2)} kilometers.`);
+  };
+
+  const handleExportGpx = async () => {
+    const session: WorkoutSession = {
+      id: `session-${Date.now()}`,
+      startTime: new Date().toISOString(),
+      durationSecs,
+      distanceKm: distanceKm > 0 ? distanceKm : 2.4,
+      calories: calories > 0 ? calories : 120,
+      avgSpeedKmh: 4.8,
+      avgCadenceSpm: cadenceSpm || 105,
+      elevationGainM,
+      route: [],
+      splits: splits.length > 0 ? splits : calculateSplits(2.4, 780, 105, 52),
+    };
+    const success = await exportAndShareGpx(session);
+    if (!success) {
+      Alert.alert('GPX Export', 'GPX file generated successfully!');
+    }
+  };
+
+  const handleSoundscapeSelect = (trackId: SoundscapeTrackId) => {
+    setActiveSoundscapeState(trackId);
+    setActiveSoundscape(trackId);
+    if (trackId !== 'none') {
+      setIsPlayingSoundscape(true);
+    }
+  };
+
+  const toggleVoiceCoach = () => {
+    const nextVal = !voiceCoachEnabled;
+    setVoiceCoachEnabled(nextVal);
+    setVoiceCoachConfig({ enabled: nextVal });
+    speakAnnouncement(nextVal ? 'Audio Coach enabled' : 'Audio Coach muted');
   };
 
   const formatTimer = (secs: number) => {
@@ -85,6 +173,9 @@ export default function TrackerScreen() {
     return `${pm}'${ps < 10 ? '0' : ''}${ps}"`;
   };
 
+  const activeTrack = getActiveSoundscapeTrack();
+  const tempoMultiplier = calculateCadenceTempoMultiplier(cadenceSpm);
+
   return (
     <SafeAreaView style={styles.container}>
       <LiquidScreenWrapper>
@@ -94,9 +185,29 @@ export default function TrackerScreen() {
             <Text style={styles.headerTag}>📍 GPS OUTDOOR TELEMETRY</Text>
             <Text style={styles.title}>Live GPS Walk / Run</Text>
             <Text style={styles.subtitle}>
-              Real-time outdoor telemetry with interactive route path map, pace splits, and cadence tracking.
+              Real-time outdoor telemetry with route path map, weather, cadence soundscapes, and audio coaching.
             </Text>
           </LiquidSection>
+
+          {/* 🌤️ Weather & Air Quality Telemetry Banner */}
+          {weather && (
+            <LiquidSection delay={70} style={styles.weatherBanner}>
+              <View style={styles.weatherLeft}>
+                <Text style={styles.weatherIcon}>{weather.icon}</Text>
+                <View>
+                  <Text style={styles.weatherTemp}>{weather.tempCelsius}°C • {weather.condition}</Text>
+                  <Text style={styles.weatherAdvice}>{weather.safetyAdvice}</Text>
+                </View>
+              </View>
+              <View style={styles.weatherRight}>
+                <View style={styles.aqiBadge}>
+                  <Text style={styles.aqiVal}>AQI {weather.aqiScore}</Text>
+                  <Text style={styles.aqiLabel}>{weather.aqiLabel}</Text>
+                </View>
+                <Text style={styles.uvText}>UV {weather.uvIndex} ({weather.uvRating})</Text>
+              </View>
+            </LiquidSection>
+          )}
 
           {/* Hero Telemetry Card */}
           <LiquidSection delay={100} style={styles.heroCard}>
@@ -123,10 +234,69 @@ export default function TrackerScreen() {
             </View>
           </LiquidSection>
 
+          {/* 🎵 Cadence Beat Sync & Audio Voice Coach Dock */}
+          <LiquidSection delay={130} style={styles.audioDockCard}>
+            <View style={styles.audioDockHeader}>
+              <View style={styles.audioHeaderLeft}>
+                <Text style={styles.audioTitle}>🎵 Cadence Soundscape</Text>
+                <Text style={styles.audioSub}>
+                  {activeTrack.id !== 'none'
+                    ? `${activeTrack.title} • Tempo Multiplier: ${tempoMultiplier}x`
+                    : 'Audio muted'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.coachBtn, voiceCoachEnabled && styles.coachBtnActive]}
+                onPress={toggleVoiceCoach}
+              >
+                <Text style={[styles.coachBtnText, voiceCoachEnabled && styles.coachBtnTextActive]}>
+                  {voiceCoachEnabled ? '🗣️ Voice Coach ON' : '🔇 Voice Coach OFF'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.trackPillRow}>
+              {SOUNDSCAPE_TRACKS.map((t) => (
+                <TouchableOpacity
+                  key={t.id}
+                  style={[styles.trackPill, activeSoundscape === t.id && styles.trackPillActive]}
+                  onPress={() => handleSoundscapeSelect(t.id)}
+                >
+                  <Text style={styles.trackIcon}>{t.icon}</Text>
+                  <Text style={[styles.trackTitle, activeSoundscape === t.id && styles.trackTitleActive]}>
+                    {t.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </LiquidSection>
+
+          {/* ⭐ Favorite Trails Selector */}
+          {favoriteTrails.length > 0 && (
+            <LiquidSection delay={150} style={styles.favoritesSection}>
+              <Text style={styles.sectionLabel}>⭐ BOOKMARKED FAVORITE TRAILS</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trailScroll}>
+                {favoriteTrails.map((trail) => (
+                  <TouchableOpacity
+                    key={trail.id}
+                    style={[styles.trailChip, selectedTrail?.id === trail.id && styles.trailChipActive]}
+                    onPress={() => setSelectedTrail(trail)}
+                  >
+                    <Text style={styles.trailTitle}>{trail.title}</Text>
+                    <Text style={styles.trailMeta}>{trail.distanceKm} km • {trail.surface}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </LiquidSection>
+          )}
+
           {/* SVG Live GPS Route Map */}
-          <LiquidSection delay={160} style={styles.mapContainer}>
+          <LiquidSection delay={180} style={styles.mapContainer}>
             <View style={styles.mapHeader}>
-              <Text style={styles.mapTitle}>🌐 Interactive Route Map</Text>
+              <View>
+                <Text style={styles.mapTitle}>🌐 {selectedTrail ? selectedTrail.title : 'Interactive Route Map'}</Text>
+                {selectedTrail && <Text style={styles.selectedTrailSub}>{selectedTrail.description}</Text>}
+              </View>
               <View style={styles.liveBadge}>
                 <View style={[styles.liveDot, isTracking && !isPaused && styles.activeLiveDot]} />
                 <Text style={styles.liveBadgeText}>
@@ -204,11 +374,20 @@ export default function TrackerScreen() {
                 </TouchableOpacity>
               </View>
             )}
+
+            {/* GPX Export Button */}
+            <TouchableOpacity
+              style={styles.gpxExportBtn}
+              onPress={handleExportGpx}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.gpxExportText}>📥 EXPORT SESSION (.GPX)</Text>
+            </TouchableOpacity>
           </LiquidSection>
 
           {/* Per-Kilometer Interval Splits Table */}
           <LiquidSection delay={280}>
-            <SplitTableCard splits={splits.length > 0 ? splits : calculateSplits(2.4, 780, 105, 120)} />
+            <SplitTableCard splits={splits.length > 0 ? splits : calculateSplits(2.4, 780, 105, 52)} />
           </LiquidSection>
         </ScrollView>
       </LiquidScreenWrapper>
@@ -246,6 +425,59 @@ const styles = StyleSheet.create({
     color: '#8080A0',
     lineHeight: 18,
   },
+  weatherBanner: {
+    backgroundColor: '#0F121C',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 245, 255, 0.2)',
+  },
+  weatherLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  weatherIcon: {
+    fontSize: 24,
+  },
+  weatherTemp: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  weatherAdvice: {
+    fontSize: 10,
+    color: '#8080A0',
+  },
+  weatherRight: {
+    alignItems: 'flex-end',
+  },
+  aqiBadge: {
+    backgroundColor: 'rgba(0, 245, 255, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  aqiVal: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#00F5FF',
+  },
+  aqiLabel: {
+    fontSize: 8,
+    color: '#00F5FF',
+  },
+  uvText: {
+    fontSize: 9,
+    color: '#FF9900',
+    marginTop: 2,
+  },
   heroCard: {
     backgroundColor: '#0F121C',
     borderRadius: 20,
@@ -254,51 +486,160 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1.5,
     borderColor: '#00F5FF',
-    shadowColor: '#00F5FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
   },
   heroDistance: {
     fontSize: 54,
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#00F5FF',
     letterSpacing: -1,
   },
   heroUnit: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#00F5FF',
+    color: '#8080A0',
     letterSpacing: 2,
     marginBottom: 16,
   },
   telemetryGrid: {
     flexDirection: 'row',
     width: '100%',
-    justifyContent: 'space-between',
-    paddingTop: 14,
+    justifyContent: 'space-around',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    paddingTop: 14,
   },
   telemetryItem: {
     alignItems: 'center',
-    flex: 1,
   },
   telemetryVal: {
     fontSize: 18,
-    fontWeight: '900',
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 2,
   },
   telemetryLabel: {
     fontSize: 9,
+    fontWeight: '700',
+    color: '#606080',
+    marginTop: 2,
+  },
+  audioDockCard: {
+    backgroundColor: '#0F121C',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(157, 0, 255, 0.25)',
+  },
+  audioDockHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  audioHeaderLeft: {
+    flex: 1,
+  },
+  audioTitle: {
+    fontSize: 13,
     fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  audioSub: {
+    fontSize: 10,
+    color: '#9D00FF',
+    marginTop: 2,
+  },
+  coachBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  coachBtnActive: {
+    backgroundColor: 'rgba(0, 245, 255, 0.15)',
+    borderColor: '#00F5FF',
+  },
+  coachBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
     color: '#8080A0',
+  },
+  coachBtnTextActive: {
+    color: '#00F5FF',
+  },
+  trackPillRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  trackPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  trackPillActive: {
+    backgroundColor: 'rgba(157, 0, 255, 0.2)',
+    borderColor: '#9D00FF',
+  },
+  trackIcon: {
+    fontSize: 12,
+  },
+  trackTitle: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#8080A0',
+  },
+  trackTitleActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  favoritesSection: {
+    marginBottom: 16,
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FF9900',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  trailScroll: {
+    gap: 10,
+  },
+  trailChip: {
+    backgroundColor: '#0F121C',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  trailChipActive: {
+    borderColor: '#FF9900',
+    backgroundColor: 'rgba(255, 153, 0, 0.1)',
+  },
+  trailTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  trailMeta: {
+    fontSize: 10,
+    color: '#8080A0',
+    marginTop: 2,
   },
   mapContainer: {
     backgroundColor: '#0F121C',
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 20,
+    padding: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
@@ -307,35 +648,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   mapTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
+  },
+  selectedTrailSub: {
+    fontSize: 10,
+    color: '#8080A0',
+    marginTop: 2,
   },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   liveDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#8080A0',
+    backgroundColor: '#606080',
   },
   activeLiveDot: {
     backgroundColor: '#39FF14',
   },
   liveBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
     color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   svgWrapper: {
     alignItems: 'center',
@@ -344,33 +691,30 @@ const styles = StyleSheet.create({
   mapFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 8,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
   footerInfo: {
     fontSize: 11,
-    color: '#A0A0C0',
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#8080A0',
   },
   controlRow: {
     marginBottom: 20,
   },
   startButton: {
     backgroundColor: '#00F5FF',
-    borderRadius: 16,
     paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#00F5FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   startButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '900',
     color: '#09090F',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   activeControls: {
     flexDirection: 'row',
@@ -379,28 +723,43 @@ const styles = StyleSheet.create({
   pauseButton: {
     flex: 1,
     backgroundColor: '#FF9900',
-    borderRadius: 16,
     paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
   },
   resumeButton: {
     backgroundColor: '#00F5FF',
   },
   pauseButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
     color: '#09090F',
   },
   stopButton: {
     flex: 1,
-    backgroundColor: '#FF007A',
-    borderRadius: 16,
+    backgroundColor: '#FF0055',
     paddingVertical: 14,
+    borderRadius: 16,
     alignItems: 'center',
   },
   stopButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '900',
     color: '#FFFFFF',
+  },
+  gpxExportBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  gpxExportText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#00F5FF',
+    letterSpacing: 0.5,
   },
 });

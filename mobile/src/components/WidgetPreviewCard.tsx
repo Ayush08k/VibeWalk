@@ -10,8 +10,9 @@ interface WidgetPreviewCardProps {
 }
 
 export default function WidgetPreviewCard({ steps, goal, streakDays }: WidgetPreviewCardProps) {
-  const [activeTab, setActiveTab] = useState<'home' | 'lock'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'lock' | 'live'>('home');
   const [synced, setSynced] = useState(false);
+  const [liveActivityActive, setLiveActivityActive] = useState(false);
 
   const ratio = Math.min(100, Math.round((steps / (goal || 10000)) * 100));
 
@@ -21,12 +22,16 @@ export default function WidgetPreviewCard({ steps, goal, streakDays }: WidgetPre
     setTimeout(() => setSynced(false), 3000);
   };
 
+  const toggleLiveActivity = () => {
+    setLiveActivityActive((prev) => !prev);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.titleGroup}>
           <Text style={styles.headerIcon}>📱</Text>
-          <Text style={styles.title}>System Widgets</Text>
+          <Text style={styles.title}>System Widgets & Live Activities</Text>
         </View>
         <View style={styles.toggleGroup}>
           <TouchableOpacity
@@ -34,7 +39,7 @@ export default function WidgetPreviewCard({ steps, goal, streakDays }: WidgetPre
             onPress={() => setActiveTab('home')}
           >
             <Text style={[styles.toggleText, activeTab === 'home' && styles.toggleTextActive]}>
-              Home Screen
+              Home
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -43,6 +48,14 @@ export default function WidgetPreviewCard({ steps, goal, streakDays }: WidgetPre
           >
             <Text style={[styles.toggleText, activeTab === 'lock' && styles.toggleTextActive]}>
               Lock Screen
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, activeTab === 'live' && styles.toggleBtnActive]}
+            onPress={() => setActiveTab('live')}
+          >
+            <Text style={[styles.toggleText, activeTab === 'live' && styles.toggleTextActive]}>
+              Live Island
             </Text>
           </TouchableOpacity>
         </View>
@@ -66,7 +79,7 @@ export default function WidgetPreviewCard({ steps, goal, streakDays }: WidgetPre
               </View>
             </View>
           </View>
-        ) : (
+        ) : activeTab === 'lock' ? (
           <View style={styles.lockWidgetCard}>
             <Text style={styles.lockIcon}>⚡</Text>
             <View style={styles.lockTextGroup}>
@@ -74,16 +87,30 @@ export default function WidgetPreviewCard({ steps, goal, streakDays }: WidgetPre
               <Text style={styles.lockSub}>{ratio}% of daily goal completed</Text>
             </View>
           </View>
+        ) : (
+          <View style={styles.islandWidgetCard}>
+            <View style={styles.islandNotch}>
+              <Text style={styles.islandIcon}>⚡</Text>
+              <Text style={styles.islandTitle}>VibeWalk Live Activity</Text>
+              <Text style={styles.islandSteps}>{steps.toLocaleString()} steps</Text>
+            </View>
+            <View style={styles.islandSubRow}>
+              <Text style={styles.islandPace}>Pace: 5'32"/km</Text>
+              <Text style={styles.islandTime}>Live Timer: 18:42</Text>
+            </View>
+          </View>
         )}
       </View>
 
       <TouchableOpacity
-        style={styles.actionButton}
-        onPress={handleExportWidget}
+        style={[styles.actionButton, activeTab === 'live' && liveActivityActive && styles.actionButtonActive]}
+        onPress={activeTab === 'live' ? toggleLiveActivity : handleExportWidget}
         activeOpacity={0.7}
       >
-        <Text style={styles.actionButtonText}>
-          {synced ? '✅ Widget Sync Complete' : '⚙️ Sync System Widget Data'}
+        <Text style={[styles.actionButtonText, activeTab === 'live' && liveActivityActive && styles.actionButtonTextActive]}>
+          {activeTab === 'live'
+            ? (liveActivityActive ? '🟢 Live Activity Active on Lock Screen' : '⚡ Start Lock Screen Live Activity')
+            : (synced ? '✅ Widget Sync Complete' : '⚙️ Sync System Widget Data')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -225,6 +252,50 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#00F5FF',
   },
+  islandWidgetCard: {
+    backgroundColor: '#000000',
+    borderRadius: 20,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  islandNotch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  islandIcon: {
+    fontSize: 14,
+  },
+  islandTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#00F5FF',
+    flex: 1,
+    marginLeft: 8,
+  },
+  islandSteps: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  islandSubRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  islandPace: {
+    fontSize: 10,
+    color: '#8080A0',
+  },
+  islandTime: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#39FF14',
+  },
   actionButton: {
     backgroundColor: 'rgba(0, 245, 255, 0.08)',
     paddingVertical: 10,
@@ -233,9 +304,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0, 245, 255, 0.2)',
   },
+  actionButtonActive: {
+    backgroundColor: 'rgba(57, 255, 20, 0.15)',
+    borderColor: '#39FF14',
+  },
   actionButtonText: {
     fontSize: 12,
     fontWeight: '700',
     color: '#00F5FF',
+  },
+  actionButtonTextActive: {
+    color: '#39FF14',
   },
 });
