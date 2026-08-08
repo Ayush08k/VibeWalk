@@ -50,7 +50,6 @@ export default function LiquidSection({
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           onPress={onPress}
-          activeOpacity={0.9}
         >
           <Animated.View style={animatedPressStyle}>{children}</Animated.View>
         </Pressable>
